@@ -51,6 +51,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
           <div className="flex items-center gap-3">
             <button
+              onClick={() => router.push("/suggest")}
+              className="text-xs bg-[var(--card)] border border-[var(--border)] px-3 py-1.5 rounded-lg hover:bg-[var(--card-hover)] transition-colors"
+            >
+              Suggest
+            </button>
+            <button
               onClick={() => router.push("/stats")}
               className="text-xs bg-[var(--card)] border border-[var(--border)] px-3 py-1.5 rounded-lg hover:bg-[var(--card-hover)] transition-colors"
             >
