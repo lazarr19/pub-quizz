@@ -21,6 +21,7 @@ export default function AllowedEmailsPage() {
 
   useEffect(() => {
     loadEmails();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadEmails = async () => {

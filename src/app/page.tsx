@@ -23,6 +23,7 @@ export default function LobbyPage() {
 
   useEffect(() => {
     loadStats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadStats = async () => {
@@ -77,7 +78,9 @@ export default function LobbyPage() {
 
   const startTraining = () => {
     const ids = Array.from(selected).join(",");
-    router.push(`/quiz?categories=${ids}${mode === "mistakes" ? "&mode=mistakes" : ""}`);
+    router.push(
+      `/quiz?categories=${ids}${mode === "mistakes" ? "&mode=mistakes" : ""}`,
+    );
   };
 
   const totalAnswered = stats.reduce((a, s) => a + s.answered, 0);
@@ -154,7 +157,8 @@ export default function LobbyPage() {
                 className="text-xs text-[var(--accent)] hover:underline"
               >
                 {mode === "mistakes"
-                  ? selected.size === stats.filter((s) => s.answered - s.correct > 0).length
+                  ? selected.size ===
+                    stats.filter((s) => s.answered - s.correct > 0).length
                     ? "Deselect All"
                     : "Select All"
                   : selected.size === stats.length

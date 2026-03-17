@@ -3,7 +3,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import type { User } from "@supabase/supabase-js";
 
 interface Profile {
   display_name: string;
@@ -11,7 +10,6 @@ interface Profile {
 }
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const router = useRouter();
   const supabase = createClient();
@@ -22,7 +20,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         data: { user },
       } = await supabase.auth.getUser();
       if (user) {
-        setUser(user);
         const { data } = await supabase
           .from("profiles")
           .select("display_name, is_admin")

@@ -44,7 +44,9 @@ function QuizContent() {
     } = await supabase.auth.getUser();
     if (!user) return;
 
-    const rpcName = isPractice ? "get_next_mistake_question" : "get_next_question";
+    const rpcName = isPractice
+      ? "get_next_mistake_question"
+      : "get_next_question";
     const { data, error } = await supabase.rpc(rpcName, {
       p_user_id: user.id,
       p_category_ids: categoryIds,
@@ -58,12 +60,14 @@ function QuizContent() {
       setAllComplete(true);
     }
     setLoading(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (categoryIds.length > 0) {
       fetchQuestion();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleAnswer = async (option: number) => {
