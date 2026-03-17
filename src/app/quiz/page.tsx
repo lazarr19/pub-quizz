@@ -32,6 +32,7 @@ function QuizContent() {
   const supabase = createClient();
 
   const categoryIds = searchParams.get("categories")?.split(",") || [];
+  const isPractice = searchParams.get("mode") === "mistakes";
 
   const fetchQuestion = useCallback(async () => {
     setLoading(true);
@@ -43,7 +44,8 @@ function QuizContent() {
     } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { data, error } = await supabase.rpc("get_next_question", {
+    const rpcName = isPractice ? "get_next_mistake_question" : "get_next_question";
+    const { data, error } = await supabase.rpc(rpcName, {
       p_user_id: user.id,
       p_category_ids: categoryIds,
     });
@@ -79,11 +81,21 @@ function QuizContent() {
     } = await supabase.auth.getUser();
     if (!user) return;
 
-    await supabase.from("user_responses").insert({
-      user_id: user.id,
-      question_id: question.id,
-      is_correct: correct,
-    });
+    if (isPractice) {
+      if (correct) {
+        await supabase.rpc("update_practice_response", {
+          p_user_id: user.id,
+          p_question_id: question.id,
+          p_is_correct: true,
+        });
+      }
+    } else {
+      await supabase.from("user_responses").insert({
+        user_id: user.id,
+        question_id: question.id,
+        is_correct: correct,
+      });
+    }
   };
 
   const handleNext = () => {
@@ -131,10 +143,14 @@ function QuizContent() {
       ) : allComplete ? (
         /* All Complete Screen */
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="text-6xl mb-4">🎉</div>
-          <h2 className="text-2xl font-bold mb-2">Category Complete!</h2>
+          <div className="text-6xl mb-4">{isPractice ? "💪" : "🎉"}</div>
+          <h2 className="text-2xl font-bold mb-2">
+            {isPractice ? "All Caught Up!" : "Category Complete!"}
+          </h2>
           <p className="text-[var(--muted)] mb-2">
-            You&apos;ve answered all questions in the selected categories.
+            {isPractice
+              ? "You\u2019ve corrected all your mistakes in the selected categories."
+              : "You\u2019ve answered all questions in the selected categories."}
           </p>
           {questionCount > 0 && (
             <p className="text-sm text-[var(--muted)] mb-6">
@@ -143,15 +159,21 @@ function QuizContent() {
             </p>
           )}
           <div className="space-y-3 w-full max-w-xs">
-            <button
-              onClick={handleReset}
-              className="w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold rounded-xl px-4 py-3 text-sm transition-colors"
-            >
-              Reset & Redo All
-            </button>
+            {!isPractice && (
+              <button
+                onClick={handleReset}
+                className="w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold rounded-xl px-4 py-3 text-sm transition-colors"
+              >
+                Reset & Redo All
+              </button>
+            )}
             <button
               onClick={() => router.push("/")}
-              className="w-full bg-[var(--card)] hover:bg-[var(--card-hover)] border border-[var(--border)] text-white font-semibold rounded-xl px-4 py-3 text-sm transition-colors"
+              className={`w-full font-semibold rounded-xl px-4 py-3 text-sm transition-colors ${
+                isPractice
+                  ? "bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white"
+                  : "bg-[var(--card)] hover:bg-[var(--card-hover)] border border-[var(--border)] text-white"
+              }`}
             >
               Back to Lobby
             </button>

@@ -16,6 +16,7 @@ interface CategoryStat {
 export default function LobbyPage() {
   const [stats, setStats] = useState<CategoryStat[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [mode, setMode] = useState<"new" | "mistakes">("new");
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const supabase = createClient();
@@ -53,16 +54,30 @@ export default function LobbyPage() {
   };
 
   const selectAll = () => {
-    if (selected.size === stats.length) {
-      setSelected(new Set());
+    if (mode === "mistakes") {
+      const mistakeCategories = stats.filter((s) => s.answered - s.correct > 0);
+      if (selected.size === mistakeCategories.length) {
+        setSelected(new Set());
+      } else {
+        setSelected(new Set(mistakeCategories.map((s) => s.category_id)));
+      }
     } else {
-      setSelected(new Set(stats.map((s) => s.category_id)));
+      if (selected.size === stats.length) {
+        setSelected(new Set());
+      } else {
+        setSelected(new Set(stats.map((s) => s.category_id)));
+      }
     }
+  };
+
+  const handleModeChange = (newMode: "new" | "mistakes") => {
+    setMode(newMode);
+    setSelected(new Set());
   };
 
   const startTraining = () => {
     const ids = Array.from(selected).join(",");
-    router.push(`/quiz?categories=${ids}`);
+    router.push(`/quiz?categories=${ids}${mode === "mistakes" ? "&mode=mistakes" : ""}`);
   };
 
   const totalAnswered = stats.reduce((a, s) => a + s.answered, 0);
@@ -70,6 +85,10 @@ export default function LobbyPage() {
   const totalQuestions = stats.reduce((a, s) => a + s.total_questions, 0);
   const overallAccuracy =
     totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
+  const totalMistakes = stats.reduce((a, s) => a + (s.answered - s.correct), 0);
+  const selectedMistakeCount = stats
+    .filter((s) => selected.has(s.category_id))
+    .reduce((a, s) => a + (s.answered - s.correct), 0);
 
   return (
     <AppShell>
@@ -102,6 +121,30 @@ export default function LobbyPage() {
             </div>
           </div>
 
+          {/* Mode Toggle */}
+          <div className="flex bg-[var(--card)] rounded-xl border border-[var(--border)] p-1">
+            <button
+              onClick={() => handleModeChange("new")}
+              className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${
+                mode === "new"
+                  ? "bg-[var(--accent)] text-white shadow-sm"
+                  : "text-[var(--muted)] hover:text-[var(--foreground)]"
+              }`}
+            >
+              New Questions
+            </button>
+            <button
+              onClick={() => handleModeChange("mistakes")}
+              className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${
+                mode === "mistakes"
+                  ? "bg-[var(--accent)] text-white shadow-sm"
+                  : "text-[var(--muted)] hover:text-[var(--foreground)]"
+              }`}
+            >
+              Mistakes{totalMistakes > 0 && ` (${totalMistakes})`}
+            </button>
+          </div>
+
           {/* Category Selection */}
           <div>
             <div className="flex items-center justify-between mb-3">
@@ -110,13 +153,21 @@ export default function LobbyPage() {
                 onClick={selectAll}
                 className="text-xs text-[var(--accent)] hover:underline"
               >
-                {selected.size === stats.length ? "Deselect All" : "Select All"}
+                {mode === "mistakes"
+                  ? selected.size === stats.filter((s) => s.answered - s.correct > 0).length
+                    ? "Deselect All"
+                    : "Select All"
+                  : selected.size === stats.length
+                    ? "Deselect All"
+                    : "Select All"}
               </button>
             </div>
 
             <div className="space-y-2">
               {stats.map((stat) => {
                 const isSelected = selected.has(stat.category_id);
+                const mistakes = stat.answered - stat.correct;
+                const isDisabledByMode = mode === "mistakes" && mistakes === 0;
                 const progress =
                   stat.total_questions > 0
                     ? (stat.answered / stat.total_questions) * 100
@@ -126,17 +177,24 @@ export default function LobbyPage() {
                     ? Math.round((stat.correct / stat.answered) * 100)
                     : 0;
                 const isComplete =
-                  stat.total_questions > 0 &&
-                  stat.answered === stat.total_questions;
+                  mode === "new"
+                    ? stat.total_questions > 0 &&
+                      stat.answered === stat.total_questions
+                    : mistakes === 0;
 
                 return (
                   <button
                     key={stat.category_id}
-                    onClick={() => toggleCategory(stat.category_id)}
+                    onClick={() =>
+                      !isDisabledByMode && toggleCategory(stat.category_id)
+                    }
+                    disabled={isDisabledByMode}
                     className={`w-full text-left bg-[var(--card)] rounded-xl p-4 border transition-all ${
-                      isSelected
-                        ? "border-[var(--accent)] bg-[var(--accent)]/5"
-                        : "border-[var(--border)] hover:border-[var(--border)]/80"
+                      isDisabledByMode
+                        ? "border-[var(--border)] opacity-40 cursor-not-allowed"
+                        : isSelected
+                          ? "border-[var(--accent)] bg-[var(--accent)]/5"
+                          : "border-[var(--border)] hover:border-[var(--border)]/80"
                     }`}
                   >
                     <div className="flex items-center justify-between mb-2">
@@ -169,34 +227,53 @@ export default function LobbyPage() {
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        {isComplete && (
-                          <span className="text-[10px] bg-[var(--success)]/20 text-[var(--success)] px-2 py-0.5 rounded-full font-medium">
-                            DONE
-                          </span>
+                        {mode === "new" ? (
+                          <>
+                            {isComplete && (
+                              <span className="text-[10px] bg-[var(--success)]/20 text-[var(--success)] px-2 py-0.5 rounded-full font-medium">
+                                DONE
+                              </span>
+                            )}
+                            <span className="text-xs text-[var(--muted)]">
+                              {stat.answered}/{stat.total_questions}
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            {mistakes === 0 ? (
+                              <span className="text-[10px] bg-[var(--success)]/20 text-[var(--success)] px-2 py-0.5 rounded-full font-medium">
+                                ALL CORRECT
+                              </span>
+                            ) : (
+                              <span className="text-xs text-[var(--error)]">
+                                {mistakes} mistake
+                                {mistakes !== 1 ? "s" : ""}
+                              </span>
+                            )}
+                          </>
                         )}
-                        <span className="text-xs text-[var(--muted)]">
-                          {stat.answered}/{stat.total_questions}
-                        </span>
                       </div>
                     </div>
 
-                    {/* Progress bar */}
-                    <div className="h-1.5 bg-[var(--background)] rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{
-                          width: `${progress}%`,
-                          backgroundColor:
-                            accuracy >= 70
-                              ? "var(--success)"
-                              : accuracy >= 40
-                              ? "var(--accent)"
-                              : "var(--error)",
-                        }}
-                      />
-                    </div>
+                    {/* Progress bar - only in new mode */}
+                    {mode === "new" && (
+                      <div className="h-1.5 bg-[var(--background)] rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{
+                            width: `${progress}%`,
+                            backgroundColor:
+                              accuracy >= 70
+                                ? "var(--success)"
+                                : accuracy >= 40
+                                  ? "var(--accent)"
+                                  : "var(--error)",
+                          }}
+                        />
+                      </div>
+                    )}
 
-                    {stat.answered > 0 && (
+                    {mode === "new" && stat.answered > 0 && (
                       <div className="text-[11px] text-[var(--muted)] mt-1.5">
                         {accuracy}% accuracy
                       </div>
@@ -213,10 +290,12 @@ export default function LobbyPage() {
             disabled={selected.size === 0}
             className="w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] disabled:opacity-30 disabled:cursor-not-allowed text-white font-semibold rounded-xl px-4 py-4 text-sm transition-colors sticky bottom-4"
           >
-            Start Training
+            {mode === "mistakes" ? "Start Practice" : "Start Training"}
             {selected.size > 0 && (
               <span className="ml-1 opacity-70">
-                ({selected.size} {selected.size === 1 ? "category" : "categories"})
+                {mode === "mistakes"
+                  ? `(${selectedMistakeCount} mistake${selectedMistakeCount !== 1 ? "s" : ""})`
+                  : `(${selected.size} ${selected.size === 1 ? "category" : "categories"})`}
               </span>
             )}
           </button>
