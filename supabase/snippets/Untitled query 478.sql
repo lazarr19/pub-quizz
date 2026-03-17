@@ -1,0 +1,1 @@
+UPDATE profiles SET is_admin = true WHERE display_name = 'laza99umka@gmail.com';
