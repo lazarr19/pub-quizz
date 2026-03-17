@@ -146,7 +146,11 @@ export default function AdminSuggestionsPage() {
   };
 
   const pending = suggestions.filter((s) => s.status === "pending");
-  const reviewed = suggestions.filter((s) => s.status !== "pending");
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const reviewed = suggestions.filter(
+    (s) => s.status !== "pending" && new Date(s.created_at) >= sevenDaysAgo,
+  );
 
   return (
     <div className="min-h-dvh flex flex-col">
