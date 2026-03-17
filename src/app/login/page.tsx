@@ -35,6 +35,7 @@ export default function LoginPage() {
         password,
         options: {
           data: { display_name: displayName || email },
+          emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/login`,
         },
       });
       if (error) {
