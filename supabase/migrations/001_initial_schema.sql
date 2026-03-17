@@ -183,12 +183,14 @@ CREATE POLICY "Admins can delete question images" ON storage.objects FOR DELETE 
 
 -- 12. Seed some categories
 INSERT INTO categories (name) VALUES
-  ('General Knowledge'),
-  ('Science'),
-  ('History'),
-  ('Geography'),
-  ('Pop Culture'),
-  ('Sports'),
-  ('Music'),
-  ('Food & Drink')
+  ('Opšte znanje'),
+  ('Nauka'),
+  ('Istorija'),
+  ('Geografija'),
+  ('Pop Kultura'),
+  ('Sport'),
+  ('Muzika'),
+  ('Hrana i Piće'),
+  ('Film i TV'),
+  ('Literatura')
 ON CONFLICT (name) DO NOTHING;

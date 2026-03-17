@@ -20,6 +20,16 @@ export default function LoginPage() {
     setError("");
 
     if (isSignUp) {
+      // Check email whitelist before attempting signup
+      const { data: allowed } = await supabase.rpc("is_email_allowed", {
+        p_email: email,
+      });
+      if (!allowed) {
+        setError("Registration is not allowed for this email address.");
+        setLoading(false);
+        return;
+      }
+
       const { error } = await supabase.auth.signUp({
         email,
         password,

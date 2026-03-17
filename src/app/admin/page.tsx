@@ -78,6 +78,12 @@ export default function AdminPage() {
           </div>
           <div className="flex items-center gap-2">
             <button
+              onClick={() => router.push("/admin/emails")}
+              className="text-xs bg-[var(--card)] border border-[var(--border)] px-3 py-1.5 rounded-lg hover:bg-[var(--card-hover)] transition-colors"
+            >
+              Emails
+            </button>
+            <button
               onClick={() => router.push("/admin/categories")}
               className="text-xs bg-[var(--card)] border border-[var(--border)] px-3 py-1.5 rounded-lg hover:bg-[var(--card-hover)] transition-colors"
             >
