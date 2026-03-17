@@ -188,11 +188,19 @@ function QuizContent() {
           {/* Session counter */}
           <div className="flex items-center justify-between text-sm text-[var(--muted)]">
             <span>Question #{questionCount + (answered ? 0 : 1)}</span>
-            {questionCount > 0 && (
-              <span>
-                {correctCount}/{questionCount} correct
-              </span>
-            )}
+            <div className="flex items-center gap-3">
+              {questionCount > 0 && (
+                <span>
+                  {correctCount}/{questionCount} correct
+                </span>
+              )}
+              <button
+                onClick={() => router.push("/")}
+                className="text-[var(--error)] hover:text-[var(--error)]/80 font-medium transition-colors"
+              >
+                End Session
+              </button>
+            </div>
           </div>
 
           <QuestionCard
