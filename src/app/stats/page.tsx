@@ -97,72 +97,78 @@ export default function StatsPage() {
               Category Breakdown
             </h3>
 
-            {stats.map((stat) => {
-              const accuracy =
-                stat.answered > 0
-                  ? Math.round((stat.correct / stat.answered) * 100)
-                  : 0;
-              const progress =
-                stat.total_questions > 0
-                  ? (stat.answered / stat.total_questions) * 100
-                  : 0;
+            {[...stats]
+              .sort((a, b) => {
+                const accA = a.answered > 0 ? a.correct / a.answered : 0;
+                const accB = b.answered > 0 ? b.correct / b.answered : 0;
+                return accA - accB;
+              })
+              .map((stat) => {
+                const accuracy =
+                  stat.answered > 0
+                    ? Math.round((stat.correct / stat.answered) * 100)
+                    : 0;
+                const progress =
+                  stat.total_questions > 0
+                    ? (stat.answered / stat.total_questions) * 100
+                    : 0;
 
-              return (
-                <div
-                  key={stat.category_id}
-                  className="bg-[var(--card)] rounded-xl border border-[var(--border)] p-4"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-sm">
-                      {stat.category_name}
-                    </span>
-                    <div className="flex items-center gap-3 text-xs">
-                      <span className="text-[var(--muted)]">
-                        {stat.answered}/{stat.total_questions}
+                return (
+                  <div
+                    key={stat.category_id}
+                    className="bg-[var(--card)] rounded-xl border border-[var(--border)] p-4"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium text-sm">
+                        {stat.category_name}
                       </span>
-                      {stat.answered > 0 && (
-                        <span
-                          className={`font-semibold ${
-                            accuracy >= 70
-                              ? "text-[var(--success)]"
-                              : accuracy >= 40
-                                ? "text-yellow-400"
-                                : "text-[var(--error)]"
-                          }`}
-                        >
-                          {accuracy}%
+                      <div className="flex items-center gap-3 text-xs">
+                        <span className="text-[var(--muted)]">
+                          {stat.answered}/{stat.total_questions}
                         </span>
-                      )}
+                        {stat.answered > 0 && (
+                          <span
+                            className={`font-semibold ${
+                              accuracy >= 70
+                                ? "text-[var(--success)]"
+                                : accuracy >= 40
+                                  ? "text-yellow-400"
+                                  : "text-[var(--error)]"
+                            }`}
+                          >
+                            {accuracy}%
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Dual bar - progress and accuracy */}
-                  <div className="space-y-1">
-                    <div className="h-1.5 bg-[var(--background)] rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{
-                          width: `${progress}%`,
-                          backgroundColor:
-                            accuracy >= 70
-                              ? "var(--success)"
-                              : accuracy >= 40
-                                ? "#eab308"
-                                : "var(--error)",
-                        }}
-                      />
+                    {/* Dual bar - progress and accuracy */}
+                    <div className="space-y-1">
+                      <div className="h-1.5 bg-[var(--background)] rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{
+                            width: `${progress}%`,
+                            backgroundColor:
+                              accuracy >= 70
+                                ? "var(--success)"
+                                : accuracy >= 40
+                                  ? "#eab308"
+                                  : "var(--error)",
+                          }}
+                        />
+                      </div>
                     </div>
-                  </div>
 
-                  {stat.answered > 0 && (
-                    <div className="flex gap-4 mt-2 text-[11px] text-[var(--muted)]">
-                      <span>✓ {stat.correct} correct</span>
-                      <span>✗ {stat.answered - stat.correct} incorrect</span>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                    {stat.answered > 0 && (
+                      <div className="flex gap-4 mt-2 text-[11px] text-[var(--muted)]">
+                        <span>✓ {stat.correct} correct</span>
+                        <span>✗ {stat.answered - stat.correct} incorrect</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
           </div>
         </div>
       )}
