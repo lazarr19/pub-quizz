@@ -97,6 +97,17 @@ export default function QuestionCard({
             <span className="text-sm">{opt.text}</span>
           </button>
         ))}
+
+        {answered && (
+          <a
+            href={`https://www.google.com/search?q=${encodeURIComponent(question.content)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs text-[var(--accent)] hover:underline mt-2"
+          >
+            🔍 Learn more
+          </a>
+        )}
       </div>
     </div>
   );
