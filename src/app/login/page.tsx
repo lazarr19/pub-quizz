@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -11,8 +11,18 @@ export default function LoginPage() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
+
+  useEffect(() => {
+    if (searchParams.get("confirmed") === "1") {
+      setSuccess(
+        "Account created! Please check your email to confirm, then log in.",
+      );
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,19 +51,8 @@ export default function LoginPage() {
       if (error) {
         setError(error.message);
       } else {
-        // Auto-confirm for local dev; in prod you might need email confirm
-        const { error: signInErr } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (signInErr) {
-          setError(
-            "Account created! Please check your email to confirm, then log in.",
-          );
-        } else {
-          router.push("/");
-          router.refresh();
-        }
+        router.push("/login?confirmed=1");
+        return;
       }
     } else {
       const { error } = await supabase.auth.signInWithPassword({
@@ -91,6 +90,12 @@ export default function LoginPage() {
           <h2 className="text-lg font-semibold text-center">
             {isSignUp ? "Create Account" : "Welcome Back"}
           </h2>
+
+          {success && (
+            <div className="bg-green-500/10 border border-green-500/30 text-green-500 text-sm rounded-lg p-3">
+              {success}
+            </div>
+          )}
 
           {error && (
             <div className="bg-[var(--error)]/10 border border-[var(--error)]/30 text-[var(--error)] text-sm rounded-lg p-3">
@@ -157,6 +162,7 @@ export default function LoginPage() {
               onClick={() => {
                 setIsSignUp(!isSignUp);
                 setError("");
+                setSuccess("");
               }}
               className="text-[var(--accent)] hover:underline"
             >
