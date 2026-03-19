@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
   return (
-    <Suspense>
+    <Suspense fallback={null}>
       <LoginForm />
     </Suspense>
   );
@@ -27,7 +27,7 @@ function LoginForm() {
   useEffect(() => {
     if (searchParams.get("confirmed") === "1") {
       setSuccess(
-        "Account created! Please check your email to confirm, then log in.",
+        "Nalog je napravljen! Proverite email za potvrdu, pa se prijavite.",
       );
     }
   }, [searchParams]);
@@ -43,7 +43,7 @@ function LoginForm() {
         p_email: email,
       });
       if (!allowed) {
-        setError("Registration is not allowed for this email address.");
+        setError("Registracija nije dozvoljena za ovu email adresu.");
         setLoading(false);
         return;
       }
@@ -84,9 +84,9 @@ function LoginForm() {
         {/* Logo / Header */}
         <div className="text-center mb-8">
           <div className="text-5xl mb-3">🧠</div>
-          <h1 className="text-2xl font-bold">Pub Quiz Trainer</h1>
+          <h1 className="text-2xl font-bold">Kviz Trener</h1>
           <p className="text-[var(--muted)] text-sm mt-1">
-            Train with your crew, crush the quiz
+            Vežbaj sa timom, osvoji kviz
           </p>
         </div>
 
@@ -96,7 +96,7 @@ function LoginForm() {
           className="bg-[var(--card)] rounded-2xl p-6 space-y-4 border border-[var(--border)]"
         >
           <h2 className="text-lg font-semibold text-center">
-            {isSignUp ? "Create Account" : "Welcome Back"}
+            {isSignUp ? "Napravi nalog" : "Dobrodošli nazad"}
           </h2>
 
           {success && (
@@ -114,14 +114,14 @@ function LoginForm() {
           {isSignUp && (
             <div>
               <label className="block text-sm text-[var(--muted)] mb-1">
-                Display Name
+                Ime za prikaz
               </label>
               <input
                 type="text"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
-                placeholder="Your nickname"
+                placeholder="Vaš nadimak"
               />
             </div>
           )}
@@ -142,7 +142,7 @@ function LoginForm() {
 
           <div>
             <label className="block text-sm text-[var(--muted)] mb-1">
-              Password
+              Lozinka
             </label>
             <input
               type="password"
@@ -160,11 +160,15 @@ function LoginForm() {
             disabled={loading}
             className="w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold rounded-xl px-4 py-3 text-sm transition-colors disabled:opacity-50"
           >
-            {loading ? "Loading..." : isSignUp ? "Create Account" : "Sign In"}
+            {loading
+              ? "Učitavanje..."
+              : isSignUp
+                ? "Napravi nalog"
+                : "Prijavi se"}
           </button>
 
           <p className="text-center text-sm text-[var(--muted)]">
-            {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
+            {isSignUp ? "Već imate nalog?" : "Nemate nalog?"}{" "}
             <button
               type="button"
               onClick={() => {
@@ -174,7 +178,7 @@ function LoginForm() {
               }}
               className="text-[var(--accent)] hover:underline"
             >
-              {isSignUp ? "Sign In" : "Sign Up"}
+              {isSignUp ? "Prijavi se" : "Registruj se"}
             </button>
           </p>
         </form>

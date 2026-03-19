@@ -97,11 +97,11 @@ export default function SuggestPage() {
         </div>
       ) : (
         <div className="space-y-6">
-          <h2 className="text-xl font-bold">Suggest a Question</h2>
+          <h2 className="text-xl font-bold">Predložite pitanje</h2>
 
           {success && (
             <div className="bg-[var(--success)]/10 border border-[var(--success)]/30 text-[var(--success)] text-sm rounded-xl p-3 text-center">
-              Suggestion submitted! An admin will review it.
+              Predlog je poslat! Admin će ga pregledati.
             </div>
           )}
 
@@ -112,7 +112,7 @@ export default function SuggestPage() {
           >
             <div>
               <label className="block text-sm text-[var(--muted)] mb-1">
-                Category
+                Kategorija
               </label>
               <select
                 value={categoryId}
@@ -120,7 +120,7 @@ export default function SuggestPage() {
                 required
                 className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
               >
-                <option value="">Select a category...</option>
+                <option value="">Izaberite kategoriju...</option>
                 {categories.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
@@ -131,7 +131,7 @@ export default function SuggestPage() {
 
             <div>
               <label className="block text-sm text-[var(--muted)] mb-1">
-                Question
+                Pitanje
               </label>
               <textarea
                 value={content}
@@ -139,13 +139,13 @@ export default function SuggestPage() {
                 required
                 rows={3}
                 className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[var(--accent)] transition-colors resize-none"
-                placeholder="Write your question here..."
+                placeholder="Napišite pitanje ovde..."
               />
             </div>
 
             <div>
               <label className="block text-sm text-[var(--muted)] mb-1">
-                Correct Answer
+                Tačan odgovor
               </label>
               <input
                 type="text"
@@ -153,7 +153,7 @@ export default function SuggestPage() {
                 onChange={(e) => setCorrectAnswer(e.target.value)}
                 required
                 className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
-                placeholder="The correct answer"
+                placeholder="Tačan odgovor"
               />
             </div>
 
@@ -162,7 +162,7 @@ export default function SuggestPage() {
               disabled={submitting}
               className="w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold rounded-xl px-4 py-3 text-sm transition-colors disabled:opacity-50"
             >
-              {submitting ? "Submitting..." : "Submit Suggestion"}
+              {submitting ? "Slanje..." : "Pošalji predlog"}
             </button>
           </form>
 
@@ -170,7 +170,7 @@ export default function SuggestPage() {
           {mySuggestions.length > 0 && (
             <div className="space-y-3">
               <h3 className="text-sm font-medium text-[var(--muted)]">
-                Your Suggestions
+                Vaši predlozi
               </h3>
               {mySuggestions.map((s) => (
                 <div
@@ -189,7 +189,7 @@ export default function SuggestPage() {
                   </div>
                   <p className="text-sm font-medium">{s.content}</p>
                   <p className="text-xs text-[var(--muted)] mt-1">
-                    Answer: {s.correct_answer}
+                    Odgovor: {s.correct_answer}
                   </p>
                 </div>
               ))}

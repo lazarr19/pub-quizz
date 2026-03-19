@@ -126,12 +126,12 @@ function QuizContent() {
     return (
       <AppShell>
         <div className="text-center py-20">
-          <p className="text-[var(--muted)]">No categories selected.</p>
+          <p className="text-[var(--muted)]">Niste izabrali kategorije.</p>
           <button
             onClick={() => router.push("/")}
             className="mt-4 text-[var(--accent)] hover:underline"
           >
-            Go back to lobby
+            Nazad na početnu
           </button>
         </div>
       </AppShell>
@@ -149,16 +149,16 @@ function QuizContent() {
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="text-6xl mb-4">{isPractice ? "💪" : "🎉"}</div>
           <h2 className="text-2xl font-bold mb-2">
-            {isPractice ? "All Caught Up!" : "Category Complete!"}
+            {isPractice ? "Sve je rešeno!" : "Kategorija završena!"}
           </h2>
           <p className="text-[var(--muted)] mb-2">
             {isPractice
-              ? "You\u2019ve corrected all your mistakes in the selected categories."
-              : "You\u2019ve answered all questions in the selected categories."}
+              ? "Ispravili ste sve greške u izabranim kategorijama."
+              : "Odgovorili ste na sva pitanja u izabranim kategorijama."}
           </p>
           {questionCount > 0 && (
             <p className="text-sm text-[var(--muted)] mb-6">
-              This session: {correctCount}/{questionCount} correct (
+              Ova sesija: {correctCount}/{questionCount} tačno (
               {Math.round((correctCount / questionCount) * 100)}%)
             </p>
           )}
@@ -168,7 +168,7 @@ function QuizContent() {
                 onClick={handleReset}
                 className="w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold rounded-xl px-4 py-3 text-sm transition-colors"
               >
-                Reset & Redo All
+                Resetuj i ponovi sve
               </button>
             )}
             <button
@@ -179,7 +179,7 @@ function QuizContent() {
                   : "bg-[var(--card)] hover:bg-[var(--card-hover)] border border-[var(--border)] text-white"
               }`}
             >
-              Back to Lobby
+              Nazad na početnu
             </button>
           </div>
         </div>
@@ -187,18 +187,18 @@ function QuizContent() {
         <div className="space-y-4">
           {/* Session counter */}
           <div className="flex items-center justify-between text-sm text-[var(--muted)]">
-            <span>Question #{questionCount + (answered ? 0 : 1)}</span>
+            <span>Pitanje #{questionCount + (answered ? 0 : 1)}</span>
             <div className="flex items-center gap-3">
               {questionCount > 0 && (
                 <span>
-                  {correctCount}/{questionCount} correct
+                  {correctCount}/{questionCount} tačno
                 </span>
               )}
               <button
                 onClick={() => router.push("/")}
                 className="text-[var(--error)] hover:text-[var(--error)]/80 font-medium transition-colors"
               >
-                End Session
+                Završi sesiju
               </button>
             </div>
           </div>
@@ -219,10 +219,10 @@ function QuizContent() {
                     : "bg-[var(--error)]/10 text-[var(--error)]"
                 }`}
               >
-                {isCorrect ? "✓ Correct!" : "✗ Incorrect"}
+                {isCorrect ? "✓ Tačno!" : "✗ Netačno"}
                 {!isCorrect && (
                   <span className="block text-xs mt-1 opacity-70">
-                    Correct answer:{" "}
+                    Tačan odgovor:{" "}
                     {question.correct_option === 1
                       ? question.option_1
                       : question.correct_option === 2
@@ -236,7 +236,7 @@ function QuizContent() {
                 onClick={handleNext}
                 className="w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold rounded-xl px-4 py-3 text-sm transition-colors"
               >
-                Next Question →
+                Sledeće pitanje →
               </button>
             </div>
           )}

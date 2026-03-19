@@ -57,7 +57,7 @@ export default function QuestionCard({
           <div className="relative w-full aspect-video rounded-xl overflow-hidden mb-4 bg-[var(--background)]">
             <Image
               src={question.image_url}
-              alt="Question image"
+              alt="Slika pitanja"
               fill
               className="object-contain"
               unoptimized
@@ -105,7 +105,7 @@ export default function QuestionCard({
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 text-xs text-[var(--accent)] hover:underline mt-2"
           >
-            🔍 Learn more
+            🔍 Saznaj više
           </a>
         )}
       </div>

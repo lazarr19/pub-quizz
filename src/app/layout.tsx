@@ -9,8 +9,8 @@ const geistSans = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Pub Quiz Trainer",
-  description: "Train for pub quizzes with your crew",
+  title: "Kviz Trener",
+  description: "Vežbaj za kviz sa svojim timom",
 };
 
 export const viewport: Viewport = {
@@ -26,7 +26,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="sr">
       <body className={`${geistSans.variable} antialiased`}>{children}</body>
     </html>
   );

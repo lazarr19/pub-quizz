@@ -66,14 +66,14 @@ export async function POST(req: NextRequest) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: process.env.EMAIL_FROM || "Pub Quiz Trainer <noreply@resend.dev>",
+        from: process.env.EMAIL_FROM || "Kviz Trener <noreply@resend.dev>",
         to: [email],
-        subject: "Your question was accepted!",
-        html: `<h2>Thank you! 🎉</h2>
-<p>Your suggested question has been accepted and added to the quiz:</p>
+        subject: "Vaše pitanje je prihvaćeno!",
+        html: `<h2>Hvala vam! 🎉</h2>
+<p>Vaše predloženo pitanje je prihvaćeno i dodato u kviz:</p>
 <blockquote style="border-left:3px solid #6366f1;padding-left:12px;color:#666;">${questionContent}</blockquote>
-<p>Keep the suggestions coming!</p>
-<p>— The Pub Quiz Trainer Team</p>`,
+<p>Nastavite sa predlozima!</p>
+<p>— Tim Kviz Trenera</p>`,
       }),
     });
 

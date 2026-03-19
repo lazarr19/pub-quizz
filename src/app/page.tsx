@@ -104,22 +104,22 @@ export default function LobbyPage() {
           {/* Overall Stats Card */}
           <div className="bg-[var(--card)] rounded-2xl p-5 border border-[var(--border)]">
             <h2 className="text-sm font-medium text-[var(--muted)] mb-3">
-              Your Progress
+              Vaš napredak
             </h2>
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
                 <div className="text-2xl font-bold">{totalAnswered}</div>
-                <div className="text-xs text-[var(--muted)]">Answered</div>
+                <div className="text-xs text-[var(--muted)]">Odgovoreno</div>
               </div>
               <div>
                 <div className="text-2xl font-bold text-[var(--success)]">
                   {overallAccuracy}%
                 </div>
-                <div className="text-xs text-[var(--muted)]">Accuracy</div>
+                <div className="text-xs text-[var(--muted)]">Tačnost</div>
               </div>
               <div>
                 <div className="text-2xl font-bold">{totalQuestions}</div>
-                <div className="text-xs text-[var(--muted)]">Total Qs</div>
+                <div className="text-xs text-[var(--muted)]">Ukupno</div>
               </div>
             </div>
           </div>
@@ -134,7 +134,7 @@ export default function LobbyPage() {
                   : "text-[var(--muted)] hover:text-[var(--foreground)]"
               }`}
             >
-              New Questions
+              Nova pitanja
             </button>
             <button
               onClick={() => handleModeChange("mistakes")}
@@ -144,14 +144,14 @@ export default function LobbyPage() {
                   : "text-[var(--muted)] hover:text-[var(--foreground)]"
               }`}
             >
-              Mistakes{totalMistakes > 0 && ` (${totalMistakes})`}
+              Greške{totalMistakes > 0 && ` (${totalMistakes})`}
             </button>
           </div>
 
           {/* Category Selection */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold">Categories</h2>
+              <h2 className="text-lg font-semibold">Kategorije</h2>
               <button
                 onClick={selectAll}
                 className="text-xs text-[var(--accent)] hover:underline"
@@ -159,11 +159,11 @@ export default function LobbyPage() {
                 {mode === "mistakes"
                   ? selected.size ===
                     stats.filter((s) => s.answered - s.correct > 0).length
-                    ? "Deselect All"
-                    : "Select All"
+                    ? "Poništi sve"
+                    : "Izaberi sve"
                   : selected.size === stats.length
-                    ? "Deselect All"
-                    : "Select All"}
+                    ? "Poništi sve"
+                    : "Izaberi sve"}
               </button>
             </div>
 
@@ -235,7 +235,7 @@ export default function LobbyPage() {
                           <>
                             {isComplete && (
                               <span className="text-[10px] bg-[var(--success)]/20 text-[var(--success)] px-2 py-0.5 rounded-full font-medium">
-                                DONE
+                                GOTOVO
                               </span>
                             )}
                             <span className="text-xs text-[var(--muted)]">
@@ -246,12 +246,11 @@ export default function LobbyPage() {
                           <>
                             {mistakes === 0 ? (
                               <span className="text-[10px] bg-[var(--success)]/20 text-[var(--success)] px-2 py-0.5 rounded-full font-medium">
-                                ALL CORRECT
+                                SVE TAČNO
                               </span>
                             ) : (
                               <span className="text-xs text-[var(--error)]">
-                                {mistakes} mistake
-                                {mistakes !== 1 ? "s" : ""}
+                                {mistakes} greš{mistakes === 1 ? "ka" : "ke"}
                               </span>
                             )}
                           </>
@@ -279,7 +278,7 @@ export default function LobbyPage() {
 
                     {mode === "new" && stat.answered > 0 && (
                       <div className="text-[11px] text-[var(--muted)] mt-1.5">
-                        {accuracy}% accuracy
+                        {accuracy}% tačnost
                       </div>
                     )}
                   </button>
@@ -294,12 +293,12 @@ export default function LobbyPage() {
             disabled={selected.size === 0}
             className="w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] disabled:opacity-30 disabled:cursor-not-allowed text-white font-semibold rounded-xl px-4 py-4 text-sm transition-colors sticky bottom-4"
           >
-            {mode === "mistakes" ? "Start Practice" : "Start Training"}
+            {mode === "mistakes" ? "Započni vežbu" : "Započni trening"}
             {selected.size > 0 && (
               <span className="ml-1 opacity-70">
                 {mode === "mistakes"
-                  ? `(${selectedMistakeCount} mistake${selectedMistakeCount !== 1 ? "s" : ""})`
-                  : `(${selected.size} ${selected.size === 1 ? "category" : "categories"})`}
+                  ? `(${selectedMistakeCount} greš${selectedMistakeCount === 1 ? "ka" : "ke"})`
+                  : `(${selected.size} ${selected.size === 1 ? "kategorija" : "kategorije"})`}
               </span>
             )}
           </button>

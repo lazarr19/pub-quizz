@@ -48,7 +48,7 @@ export default function AllowedEmailsPage() {
     if (insertErr) {
       setError(
         insertErr.code === "23505"
-          ? "This email is already in the list."
+          ? "Ovaj email je već na listi."
           : insertErr.message,
       );
     } else {
@@ -59,7 +59,7 @@ export default function AllowedEmailsPage() {
   };
 
   const removeEmail = async (id: string, email: string) => {
-    if (!confirm(`Remove ${email} from allowed list?`)) return;
+    if (!confirm(`Ukloniti ${email} sa liste dozvoljenih?`)) return;
     await supabase.from("allowed_emails").delete().eq("id", id);
     setEmails((prev) => prev.filter((e) => e.id !== id));
   };
@@ -74,12 +74,12 @@ export default function AllowedEmailsPage() {
               onClick={() => router.push("/admin")}
               className="text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
             >
-              ← Back
+              ← Nazad
             </button>
-            <h1 className="font-bold text-lg">Allowed Emails</h1>
+            <h1 className="font-bold text-lg">Dozvoljeni emailovi</h1>
           </div>
           <span className="text-sm text-[var(--muted)]">
-            {emails.length} email{emails.length !== 1 ? "s" : ""}
+            {emails.length} email{emails.length !== 1 ? "ova" : ""}
           </span>
         </div>
       </header>
@@ -100,7 +100,7 @@ export default function AllowedEmailsPage() {
             disabled={adding}
             className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold rounded-xl px-5 py-3 text-sm transition-colors disabled:opacity-50 shrink-0"
           >
-            {adding ? "Adding..." : "Add"}
+            {adding ? "Dodavanje..." : "Dodaj"}
           </button>
         </form>
 
@@ -116,9 +116,9 @@ export default function AllowedEmailsPage() {
           </div>
         ) : emails.length === 0 ? (
           <div className="text-center py-12 text-[var(--muted)]">
-            <p>No emails added yet.</p>
+            <p>Nema dodatih emailova.</p>
             <p className="text-sm mt-1">
-              Add email addresses to allow registration.
+              Dodajte email adrese da biste dozvolili registraciju.
             </p>
           </div>
         ) : (
@@ -132,7 +132,7 @@ export default function AllowedEmailsPage() {
                 <button
                   onClick={() => removeEmail(entry.id, entry.email)}
                   className="text-[var(--muted)] hover:text-[var(--error)] transition-colors text-sm shrink-0"
-                  title="Remove email"
+                  title="Ukloni email"
                 >
                   ✕
                 </button>

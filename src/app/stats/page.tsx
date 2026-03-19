@@ -50,7 +50,7 @@ export default function StatsPage() {
         </div>
       ) : (
         <div className="space-y-6">
-          <h2 className="text-xl font-bold">Your Statistics</h2>
+          <h2 className="text-xl font-bold">Vaša statistika</h2>
 
           {/* Overall */}
           <div className="bg-[var(--card)] rounded-2xl p-5 border border-[var(--border)]">
@@ -60,7 +60,7 @@ export default function StatsPage() {
                   {overallAccuracy}%
                 </div>
                 <div className="text-xs text-[var(--muted)] mt-1">
-                  Overall Accuracy
+                  Ukupna tačnost
                 </div>
               </div>
               <div>
@@ -71,7 +71,7 @@ export default function StatsPage() {
                   </span>
                 </div>
                 <div className="text-xs text-[var(--muted)] mt-1">
-                  Total Progress
+                  Ukupan napredak
                 </div>
               </div>
             </div>
@@ -94,7 +94,7 @@ export default function StatsPage() {
           {/* Category Breakdown */}
           <div className="space-y-3">
             <h3 className="text-sm font-medium text-[var(--muted)]">
-              Category Breakdown
+              Po kategorijama
             </h3>
 
             {[...stats]
@@ -162,8 +162,8 @@ export default function StatsPage() {
 
                     {stat.answered > 0 && (
                       <div className="flex gap-4 mt-2 text-[11px] text-[var(--muted)]">
-                        <span>✓ {stat.correct} correct</span>
-                        <span>✗ {stat.answered - stat.correct} incorrect</span>
+                        <span>✓ {stat.correct} tačno</span>
+                        <span>✗ {stat.answered - stat.correct} netačno</span>
                       </div>
                     )}
                   </div>

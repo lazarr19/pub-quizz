@@ -83,7 +83,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               onClick={handleLogout}
               className="text-xs text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
             >
-              Logout
+              Odjavi se
             </button>
           </div>
         </div>

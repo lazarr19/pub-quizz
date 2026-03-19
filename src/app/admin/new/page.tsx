@@ -123,9 +123,9 @@ export default function NewQuestionPage() {
               onClick={() => router.push("/admin")}
               className="text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
             >
-              ← Back
+              ← Nazad
             </button>
-            <h1 className="font-bold text-lg">New Question</h1>
+            <h1 className="font-bold text-lg">Novo pitanje</h1>
           </div>
         </div>
       </header>
@@ -133,7 +133,7 @@ export default function NewQuestionPage() {
       <main className="flex-1 max-w-lg mx-auto w-full px-4 py-6">
         {success && (
           <div className="mb-4 bg-[var(--success)]/10 border border-[var(--success)]/30 text-[var(--success)] text-sm rounded-xl p-3 text-center">
-            Question created successfully!
+            Pitanje je uspešno napravljeno!
           </div>
         )}
 
@@ -141,7 +141,7 @@ export default function NewQuestionPage() {
           {/* Type Toggle */}
           <div className="bg-[var(--card)] rounded-xl border border-[var(--border)] p-4">
             <label className="block text-sm text-[var(--muted)] mb-2">
-              Question Type
+              Tip pitanja
             </label>
             <div className="flex gap-2">
               {(["text", "image"] as const).map((t) => (
@@ -159,7 +159,7 @@ export default function NewQuestionPage() {
                     {...register("type")}
                     className="sr-only"
                   />
-                  {t === "text" ? "📝 Text" : "🖼 Image"}
+                  {t === "text" ? "📝 Tekst" : "🖼 Slika"}
                 </label>
               ))}
             </div>
@@ -168,13 +168,15 @@ export default function NewQuestionPage() {
           {/* Category */}
           <div className="bg-[var(--card)] rounded-xl border border-[var(--border)] p-4">
             <label className="block text-sm text-[var(--muted)] mb-2">
-              Category
+              Kategorija
             </label>
             <select
-              {...register("category_id", { required: "Category is required" })}
+              {...register("category_id", {
+                required: "Kategorija je obavezna",
+              })}
               className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[var(--accent)]"
             >
-              <option value="">Select a category...</option>
+              <option value="">Izaberite kategoriju...</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
@@ -191,15 +193,15 @@ export default function NewQuestionPage() {
           {/* Question Content */}
           <div className="bg-[var(--card)] rounded-xl border border-[var(--border)] p-4">
             <label className="block text-sm text-[var(--muted)] mb-2">
-              Question Text
+              Tekst pitanja
             </label>
             <textarea
               {...register("content", {
-                required: "Question text is required",
+                required: "Tekst pitanja je obavezan",
               })}
               rows={3}
               className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[var(--accent)] resize-none"
-              placeholder="Enter the question..."
+              placeholder="Unesite pitanje..."
             />
             {errors.content && (
               <p className="text-[var(--error)] text-xs mt-1">
@@ -212,7 +214,7 @@ export default function NewQuestionPage() {
           {questionType === "image" && (
             <div className="bg-[var(--card)] rounded-xl border border-[var(--border)] p-4">
               <label className="block text-sm text-[var(--muted)] mb-2">
-                Question Image
+                Slika pitanja
               </label>
               <input
                 type="file"
@@ -225,7 +227,7 @@ export default function NewQuestionPage() {
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={imagePreview}
-                    alt="Preview"
+                    alt="Pregled"
                     className="w-full h-full object-contain"
                   />
                 </div>
@@ -236,7 +238,7 @@ export default function NewQuestionPage() {
           {/* Answer Options */}
           <div className="bg-[var(--card)] rounded-xl border border-[var(--border)] p-4 space-y-3">
             <label className="block text-sm text-[var(--muted)]">
-              Answer Options
+              Opcije odgovora
             </label>
 
             {[1, 2, 3].map((num) => (
@@ -260,17 +262,16 @@ export default function NewQuestionPage() {
                   type="text"
                   {...register(
                     `option_${num}` as "option_1" | "option_2" | "option_3",
-                    { required: `Option ${num} is required` },
+                    { required: `Opcija ${num} je obavezna` },
                   )}
                   className="flex-1 bg-[var(--background)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[var(--accent)]"
-                  placeholder={`Option ${["A", "B", "C"][num - 1]}...`}
+                  placeholder={`Opcija ${["A", "B", "C"][num - 1]}...`}
                 />
               </div>
             ))}
 
             <p className="text-[10px] text-[var(--muted)]">
-              Click the letter badge to mark the correct answer (green =
-              correct)
+              Kliknite na slovo da označite tačan odgovor (zeleno = tačno)
             </p>
           </div>
 
@@ -280,7 +281,7 @@ export default function NewQuestionPage() {
             disabled={submitting}
             className="w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold rounded-xl px-4 py-3.5 text-sm transition-colors disabled:opacity-50"
           >
-            {submitting ? "Creating..." : "Create Question"}
+            {submitting ? "Kreiranje..." : "Napravi pitanje"}
           </button>
         </form>
       </main>

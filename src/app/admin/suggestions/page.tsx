@@ -87,7 +87,7 @@ export default function AdminSuggestionsPage() {
       !promoteData.option_2 ||
       !promoteData.option_3
     ) {
-      alert("Please fill all three options.");
+      alert("Popunite sve tri opcije.");
       return;
     }
 
@@ -135,7 +135,7 @@ export default function AdminSuggestionsPage() {
   };
 
   const rejectSuggestion = async (id: string) => {
-    if (!confirm("Reject this suggestion?")) return;
+    if (!confirm("Odbiti ovaj predlog?")) return;
     await supabase
       .from("suggested_questions")
       .update({ status: "rejected" })
@@ -160,11 +160,11 @@ export default function AdminSuggestionsPage() {
             onClick={() => router.push("/admin")}
             className="text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
           >
-            ← Back
+            ← Nazad
           </button>
-          <h1 className="font-bold text-lg">Suggested Questions</h1>
+          <h1 className="font-bold text-lg">Predložena pitanja</h1>
           <span className="text-sm text-[var(--muted)] ml-auto">
-            {pending.length} pending
+            {pending.length} na čekanju
           </span>
         </div>
       </header>
@@ -176,7 +176,7 @@ export default function AdminSuggestionsPage() {
           </div>
         ) : pending.length === 0 && reviewed.length === 0 ? (
           <div className="text-center py-20 text-[var(--muted)]">
-            No suggestions yet.
+            Nema predloga.
           </div>
         ) : (
           <>
@@ -184,7 +184,7 @@ export default function AdminSuggestionsPage() {
             {pending.length > 0 && (
               <div className="space-y-3">
                 <h3 className="text-sm font-medium text-[var(--muted)]">
-                  Pending Review
+                  Čekaju pregled
                 </h3>
                 {pending.map((s) => (
                   <div
@@ -194,8 +194,8 @@ export default function AdminSuggestionsPage() {
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div>
                         <span className="text-xs text-[var(--muted)]">
-                          {s.categories?.name} · by{" "}
-                          {s.profiles?.display_name || "Unknown"}
+                          {s.categories?.name} · od{" "}
+                          {s.profiles?.display_name || "Nepoznato"}
                         </span>
                       </div>
                       <span className="text-[10px] text-[var(--muted)] shrink-0">
@@ -204,18 +204,18 @@ export default function AdminSuggestionsPage() {
                     </div>
                     <p className="text-sm font-medium mb-1">{s.content}</p>
                     <p className="text-xs text-[var(--muted)] mb-3">
-                      Suggested answer: {s.correct_answer}
+                      Predloženi odgovor: {s.correct_answer}
                     </p>
 
                     {promoting === s.id && promoteData ? (
                       /* Promote form */
                       <div className="bg-[var(--background)] rounded-lg p-4 space-y-3 border border-[var(--border)]">
                         <p className="text-xs text-[var(--muted)] font-medium">
-                          Fill in the 3 answer options and pick the correct one:
+                          Popunite 3 opcije odgovora i izaberite tačnu:
                         </p>
                         <div>
                           <label className="block text-xs text-[var(--muted)] mb-1">
-                            Category
+                            Kategorija
                           </label>
                           <select
                             value={promoteData.category_id}
@@ -236,7 +236,7 @@ export default function AdminSuggestionsPage() {
                         </div>
                         <div>
                           <label className="block text-xs text-[var(--muted)] mb-1">
-                            Question Text
+                            Tekst pitanja
                           </label>
                           <textarea
                             value={promoteData.content}
@@ -267,7 +267,7 @@ export default function AdminSuggestionsPage() {
                             />
                             <input
                               type="text"
-                              placeholder={`Option ${n}`}
+                              placeholder={`Opcija ${n}`}
                               value={
                                 promoteData[
                                   `option_${n}` as keyof typeof promoteData
@@ -288,13 +288,13 @@ export default function AdminSuggestionsPage() {
                             onClick={confirmPromote}
                             className="flex-1 bg-[var(--success)] hover:opacity-90 text-white font-semibold rounded-lg px-3 py-2 text-sm transition-opacity"
                           >
-                            Confirm & Add Question
+                            Potvrdi i dodaj pitanje
                           </button>
                           <button
                             onClick={cancelPromote}
                             className="bg-[var(--card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm hover:bg-[var(--card-hover)] transition-colors"
                           >
-                            Cancel
+                            Otkaži
                           </button>
                         </div>
                       </div>
@@ -304,13 +304,13 @@ export default function AdminSuggestionsPage() {
                           onClick={() => startPromote(s)}
                           className="text-xs bg-[var(--success)]/20 text-[var(--success)] px-3 py-1.5 rounded-lg font-medium hover:bg-[var(--success)]/30 transition-colors"
                         >
-                          Accept & Promote
+                          Prihvati i dodaj
                         </button>
                         <button
                           onClick={() => rejectSuggestion(s.id)}
                           className="text-xs bg-[var(--error)]/20 text-[var(--error)] px-3 py-1.5 rounded-lg font-medium hover:bg-[var(--error)]/30 transition-colors"
                         >
-                          Reject
+                          Odbij
                         </button>
                       </div>
                     )}
@@ -323,7 +323,7 @@ export default function AdminSuggestionsPage() {
             {reviewed.length > 0 && (
               <div className="space-y-3">
                 <h3 className="text-sm font-medium text-[var(--muted)]">
-                  Reviewed
+                  Pregledano
                 </h3>
                 {reviewed.map((s) => (
                   <div
@@ -332,8 +332,8 @@ export default function AdminSuggestionsPage() {
                   >
                     <div className="flex items-start justify-between gap-2 mb-1">
                       <span className="text-xs text-[var(--muted)]">
-                        {s.categories?.name} · by{" "}
-                        {s.profiles?.display_name || "Unknown"}
+                        {s.categories?.name} · od{" "}
+                        {s.profiles?.display_name || "Nepoznato"}
                       </span>
                       <span
                         className={`text-[10px] px-2 py-0.5 rounded-full font-medium capitalize ${
@@ -347,7 +347,7 @@ export default function AdminSuggestionsPage() {
                     </div>
                     <p className="text-sm font-medium">{s.content}</p>
                     <p className="text-xs text-[var(--muted)] mt-1">
-                      Answer: {s.correct_answer}
+                      Odgovor: {s.correct_answer}
                     </p>
                   </div>
                 ))}

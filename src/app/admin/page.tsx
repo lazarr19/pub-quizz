@@ -15,9 +15,9 @@ export default function AdminPage() {
               onClick={() => router.push("/")}
               className="text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
             >
-              ← Back
+              ← Nazad
             </button>
-            <h1 className="font-bold text-lg">Admin Panel</h1>
+            <h1 className="font-bold text-lg">Admin panel</h1>
           </div>
         </div>
       </header>
@@ -28,36 +28,36 @@ export default function AdminPage() {
             onClick={() => router.push("/admin/suggestions")}
             className="w-full bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 text-left hover:bg-[var(--card-hover)] transition-colors"
           >
-            <span className="font-medium">Suggested Questions</span>
+            <span className="font-medium">Predložena pitanja</span>
             <p className="text-xs text-[var(--muted)] mt-1">
-              Review and promote player suggestions
+              Pregledajte i prihvatite predloge igrača
             </p>
           </button>
           <button
             onClick={() => router.push("/admin/new")}
             className="w-full bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 text-left hover:bg-[var(--card-hover)] transition-colors"
           >
-            <span className="font-medium">Add Question</span>
+            <span className="font-medium">Dodaj pitanje</span>
             <p className="text-xs text-[var(--muted)] mt-1">
-              Create a new quiz question
+              Napravite novo kviz pitanje
             </p>
           </button>
           <button
             onClick={() => router.push("/admin/categories")}
             className="w-full bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 text-left hover:bg-[var(--card-hover)] transition-colors"
           >
-            <span className="font-medium">Categories</span>
+            <span className="font-medium">Kategorije</span>
             <p className="text-xs text-[var(--muted)] mt-1">
-              Manage question categories
+              Upravljajte kategorijama pitanja
             </p>
           </button>
           <button
             onClick={() => router.push("/admin/emails")}
             className="w-full bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 text-left hover:bg-[var(--card-hover)] transition-colors"
           >
-            <span className="font-medium">Allowed Emails</span>
+            <span className="font-medium">Dozvoljeni emailovi</span>
             <p className="text-xs text-[var(--muted)] mt-1">
-              Manage email whitelist for registration
+              Upravljajte listom emailova za registraciju
             </p>
           </button>
         </div>

@@ -54,7 +54,11 @@ export default function CategoriesPage() {
   };
 
   const deleteCategory = async (id: string, name: string) => {
-    if (!confirm(`Delete "${name}"? This will also delete all its questions.`))
+    if (
+      !confirm(
+        `Obrisati "${name}"? Ovo će obrisati i sva pitanja u ovoj kategoriji.`,
+      )
+    )
       return;
     await supabase.from("categories").delete().eq("id", id);
     setCategories((prev) => prev.filter((c) => c.id !== id));
@@ -68,9 +72,9 @@ export default function CategoriesPage() {
             onClick={() => router.push("/admin")}
             className="text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
           >
-            ← Back
+            ← Nazad
           </button>
-          <h1 className="font-bold text-lg">Categories</h1>
+          <h1 className="font-bold text-lg">Kategorije</h1>
         </div>
       </header>
 
@@ -81,7 +85,7 @@ export default function CategoriesPage() {
             type="text"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
-            placeholder="New category name..."
+            placeholder="Naziv nove kategorije..."
             className="flex-1 bg-[var(--card)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[var(--accent)]"
           />
           <button
@@ -89,7 +93,7 @@ export default function CategoriesPage() {
             disabled={adding || !newName.trim()}
             className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold rounded-xl px-5 py-3 text-sm transition-colors disabled:opacity-50"
           >
-            Add
+            Dodaj
           </button>
         </form>
 
@@ -109,7 +113,7 @@ export default function CategoriesPage() {
                 <button
                   onClick={() => deleteCategory(cat.id, cat.name)}
                   className="text-[var(--muted)] hover:text-[var(--error)] transition-colors text-sm"
-                  title="Delete"
+                  title="Obriši"
                 >
                   🗑
                 </button>
@@ -117,7 +121,7 @@ export default function CategoriesPage() {
             ))}
             {categories.length === 0 && (
               <p className="text-center text-sm text-[var(--muted)] py-8">
-                No categories yet. Add one above.
+                Nema kategorija. Dodajte jednu iznad.
               </p>
             )}
           </div>

@@ -72,20 +72,6 @@ export default function LeaderboardPage() {
     (e) => e.user_id === userId,
   );
 
-  const getRankSuffix = (rank: number) => {
-    if (rank % 100 >= 11 && rank % 100 <= 13) return "th";
-    switch (rank % 10) {
-      case 1:
-        return "st";
-      case 2:
-        return "nd";
-      case 3:
-        return "rd";
-      default:
-        return "th";
-    }
-  };
-
   const getMedalEmoji = (rank: number) => {
     switch (rank) {
       case 1:
@@ -108,9 +94,9 @@ export default function LeaderboardPage() {
       ) : (
         <div className="space-y-6">
           <div>
-            <h2 className="text-xl font-bold">🏆 Leaderboard</h2>
+            <h2 className="text-xl font-bold">🏆 Rang lista</h2>
             <p className="text-xs text-[var(--muted)] mt-1">
-              Most correct answers in the last 7 days
+              Najviše tačnih odgovora u poslednjih 7 dana
             </p>
           </div>
 
@@ -153,7 +139,7 @@ export default function LeaderboardPage() {
                           {entry.display_name}
                           {isMe && (
                             <span className="text-xs text-[var(--muted)] ml-1.5">
-                              (you)
+                              (vi)
                             </span>
                           )}
                         </span>
@@ -173,10 +159,10 @@ export default function LeaderboardPage() {
           ) : (
             <div className="bg-[var(--card)] rounded-2xl border border-[var(--border)] p-8 text-center">
               <p className="text-[var(--muted)] text-sm">
-                No activity in the last 7 days.
+                Nema aktivnosti u poslednjih 7 dana.
               </p>
               <p className="text-[var(--muted)] text-xs mt-1">
-                Start answering questions to claim the top spot!
+                Počnite da odgovarate na pitanja i zauzmite prvo mesto!
               </p>
             </div>
           )}
@@ -192,7 +178,7 @@ export default function LeaderboardPage() {
                   <span className="text-sm font-semibold text-[var(--accent)]">
                     {data.current_user.display_name}
                     <span className="text-xs text-[var(--muted)] ml-1.5">
-                      (you)
+                      (vi)
                     </span>
                   </span>
                 </div>
@@ -201,9 +187,8 @@ export default function LeaderboardPage() {
                 </span>
               </div>
               <p className="text-xs text-[var(--muted)] mt-2 pl-11">
-                You&apos;re {data.current_user.rank}
-                {getRankSuffix(data.current_user.rank)} — keep going to break
-                into the top {Math.min(10, data.leaderboard.length)}!
+                Vi ste {data.current_user.rank}. — nastavite da uđete među prvih{" "}
+                {Math.min(10, data.leaderboard.length)}!
               </p>
             </div>
           )}
@@ -212,10 +197,10 @@ export default function LeaderboardPage() {
           {data && !data.current_user && (
             <div className="bg-[var(--card)] rounded-2xl border border-[var(--border)] p-4 text-center">
               <p className="text-[var(--muted)] text-sm">
-                You haven&apos;t answered any questions correctly this week.
+                Niste tačno odgovorili ni na jedno pitanje ove nedelje.
               </p>
               <p className="text-[var(--muted)] text-xs mt-1">
-                Play some rounds to get on the board!
+                Odigrajte nekoliko rundi da se popnete na listu!
               </p>
             </div>
           )}
@@ -223,9 +208,9 @@ export default function LeaderboardPage() {
           {/* ── Streak Leaderboard ── */}
           <div className="border-t border-[var(--border)] pt-6">
             <div>
-              <h2 className="text-xl font-bold">🔥 Streak Leaderboard</h2>
+              <h2 className="text-xl font-bold">🔥 Rang lista po nizovima</h2>
               <p className="text-xs text-[var(--muted)] mt-1">
-                Consecutive days with at least one correct answer
+                Uzastopni dani sa bar jednim tačnim odgovorom
               </p>
             </div>
           </div>
@@ -268,7 +253,7 @@ export default function LeaderboardPage() {
                           {entry.display_name}
                           {isMe && (
                             <span className="text-xs text-[var(--muted)] ml-1.5">
-                              (you)
+                              (vi)
                             </span>
                           )}
                         </span>
@@ -286,7 +271,7 @@ export default function LeaderboardPage() {
                         {!entry.answered_today && (
                           <span
                             className="text-[10px] text-yellow-400 font-medium"
-                            title="Hasn't played today yet"
+                            title="Danas još nije igrao/la"
                           >
                             ⏳
                           </span>
@@ -300,10 +285,10 @@ export default function LeaderboardPage() {
           ) : (
             <div className="bg-[var(--card)] rounded-2xl border border-[var(--border)] p-8 text-center">
               <p className="text-[var(--muted)] text-sm">
-                No active streaks right now.
+                Trenutno nema aktivnih nizova.
               </p>
               <p className="text-[var(--muted)] text-xs mt-1">
-                Answer a question correctly each day to start a streak!
+                Odgovarajte tačno svaki dan da započnete niz!
               </p>
             </div>
           )}
@@ -322,7 +307,7 @@ export default function LeaderboardPage() {
                         <span className="text-sm font-semibold text-[var(--accent)]">
                           {streakData.current_user.display_name}
                           <span className="text-xs text-[var(--muted)] ml-1.5">
-                            (you)
+                            (vi)
                           </span>
                         </span>
                       </div>
@@ -339,24 +324,24 @@ export default function LeaderboardPage() {
                     </div>
                     {!streakData.current_user.answered_today && (
                       <p className="text-xs text-yellow-400 mt-2 pl-11">
-                        Answer today to keep your streak alive!
+                        Odgovorite danas da održite niz!
                       </p>
                     )}
                   </>
                 ) : streakData.current_user.answered_yesterday ? (
                   <div className="text-center">
                     <p className="text-sm text-yellow-400">
-                      ⏳ Your streak expired — but answer correctly today to
-                      start a new one!
+                      ⏳ Vaš niz je istekao — ali odgovorite tačno danas da
+                      započnete novi!
                     </p>
                   </div>
                 ) : (
                   <div className="text-center">
                     <p className="text-[var(--muted)] text-sm">
-                      You don&apos;t have an active streak.
+                      Nemate aktivan niz.
                     </p>
                     <p className="text-[var(--muted)] text-xs mt-1">
-                      Answer a question correctly today to start one!
+                      Odgovorite tačno danas da započnete niz!
                     </p>
                   </div>
                 )}
