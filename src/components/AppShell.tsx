@@ -46,7 +46,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             onClick={() => router.push("/lobby")}
             className="flex items-center gap-2 font-bold text-lg"
           >
-            🧠 <span className="hidden sm:inline">KZZ</span>
+            <img
+              src="/kzz-logo.png"
+              alt="KZZ"
+              className="w-6 h-6 object-contain"
+            />{" "}
+            <span className="hidden sm:inline">KZZ</span>
           </button>
 
           <div className="flex items-center gap-3">
