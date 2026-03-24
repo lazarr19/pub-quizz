@@ -203,6 +203,12 @@ export default function LandingPage() {
             >
               Započni vežbanje →
             </Link>
+            <Link
+              href="/demo"
+              className="w-full sm:w-auto bg-[var(--card)] hover:bg-[var(--card-hover)] border border-[var(--border)] text-[var(--foreground)] font-semibold rounded-xl px-8 py-4 text-sm transition-colors hover:scale-105 active:scale-95 transform"
+            >
+              Probaj demo ▶
+            </Link>
           </div>
 
           {/* Hero image placeholder */}
