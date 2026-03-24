@@ -273,7 +273,12 @@ export default function DemoPage() {
       <header className="sticky top-0 z-50 bg-[var(--card)]/80 backdrop-blur-md border-b border-[var(--border)]">
         <div className="max-w-lg mx-auto flex items-center justify-between px-4 py-3">
           <Link href="/" className="flex items-center gap-2 font-bold text-lg">
-            🧠 <span>KZZ</span>
+            <img
+              src="/kzz-logo.png"
+              alt="KZZ"
+              className="w-6 h-6 object-contain"
+            />{" "}
+            <span>KZZ</span>
           </Link>
           <span className="text-xs bg-[var(--accent)]/10 text-[var(--accent)] px-3 py-1 rounded-full font-semibold border border-[var(--accent)]/20">
             DEMO

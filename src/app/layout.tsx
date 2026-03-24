@@ -35,6 +35,9 @@ export const metadata: Metadata = {
     locale: "sr_RS",
     siteName: "Ko Zna Zna",
   },
+  icons: {
+    icon: "/kzz-logo.ico",
+  },
 };
 
 export const viewport: Viewport = {

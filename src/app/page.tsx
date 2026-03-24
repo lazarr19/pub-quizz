@@ -164,7 +164,12 @@ export default function LandingPage() {
       <header className="sticky top-0 z-50 bg-[var(--background)]/80 backdrop-blur-md border-b border-[var(--border)]">
         <div className="max-w-5xl mx-auto flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2 font-bold text-lg">
-            🧠 <span>KZZ</span>
+            <img
+              src="/kzz-logo.png"
+              alt="KZZ"
+              className="w-6 h-6 object-contain"
+            />{" "}
+            <span>KZZ</span>
           </div>
           <Link
             href="/login"
@@ -211,15 +216,16 @@ export default function LandingPage() {
             </Link>
           </div>
 
-          {/* Hero image placeholder */}
+          {/* Hero image */}
           <div
-            className="mt-10 bg-[var(--card)] border border-[var(--border)] rounded-2xl aspect-video max-w-xl mx-auto flex items-center justify-center animate-scale-in"
+            className="mt-10 max-w-xl mx-auto animate-scale-in"
             style={{ animationDelay: "0.35s" }}
           >
-            <span className="text-[var(--muted)] text-sm">
-              {/* TODO: Dodaj hero sliku ili screenshot aplikacije */}[ Hero
-              slika / Screenshot aplikacije ]
-            </span>
+            <img
+              src="/hero.png"
+              alt="Ko Zna Zna - screenshot aplikacije"
+              className="w-full rounded-2xl border border-[var(--border)]"
+            />
           </div>
         </div>
       </section>
@@ -432,7 +438,11 @@ export default function LandingPage() {
       <footer className="border-t border-[var(--border)] py-8 px-4">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-[var(--muted)]">
           <div className="flex items-center gap-2">
-            🧠{" "}
+            <img
+              src="/kzz-logo.png"
+              alt="KZZ"
+              className="w-6 h-6 object-contain"
+            />{" "}
             <span className="font-semibold text-[var(--foreground)]">
               Ko Zna Zna
             </span>

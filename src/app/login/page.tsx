@@ -13,9 +13,10 @@ export default function LoginPage() {
 }
 
 function LoginForm() {
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [email, setEmail] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -48,11 +49,34 @@ function LoginForm() {
         return;
       }
 
+      // Validate that the nickname is provided, one word, and unique
+      if (!displayName.trim()) {
+        setError("Nadimak je obavezan.");
+        setLoading(false);
+        return;
+      }
+
+      if (/\s/.test(displayName.trim())) {
+        setError("Nadimak mora biti jedna reč (bez razmaka).");
+        setLoading(false);
+        return;
+      }
+
+      const { data: existingEmail } = await supabase.rpc(
+        "get_email_by_display_name",
+        { p_display_name: displayName.trim() },
+      );
+      if (existingEmail) {
+        setError("Ovaj nadimak je već zauzet. Izaberite drugi.");
+        setLoading(false);
+        return;
+      }
+
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: { display_name: displayName || email },
+          data: { display_name: displayName.trim() },
           emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/login`,
         },
       });
@@ -63,8 +87,25 @@ function LoginForm() {
         return;
       }
     } else {
+      // Resolve identifier: if it looks like an email use directly, otherwise look up by nickname
+      const isEmail = identifier.includes("@");
+      let loginEmail = identifier;
+
+      if (!isEmail) {
+        const { data: resolvedEmail, error: rpcError } = await supabase.rpc(
+          "get_email_by_display_name",
+          { p_display_name: identifier.trim() },
+        );
+        if (rpcError || !resolvedEmail) {
+          setError("Korisnik sa ovim nadimkom nije pronađen.");
+          setLoading(false);
+          return;
+        }
+        loginEmail = resolvedEmail;
+      }
+
       const { error } = await supabase.auth.signInWithPassword({
-        email,
+        email: loginEmail,
         password,
       });
       if (error) {
@@ -83,7 +124,11 @@ function LoginForm() {
       <div className="w-full max-w-sm">
         {/* Logo / Header */}
         <div className="text-center mb-8">
-          <div className="text-5xl mb-3">🧠</div>
+          <img
+            src="/kzz-logo.png"
+            alt="KZZ"
+            className="w-16 h-16 object-contain mx-auto mb-3"
+          />
           <h1 className="text-2xl font-bold">Ko Zna Zna</h1>
           <p className="text-[var(--muted)] text-sm mt-1">
             Pripremi se za kviz, osvoji znanje
@@ -112,33 +157,51 @@ function LoginForm() {
           )}
 
           {isSignUp && (
+            <>
+              <div>
+                <label className="block text-sm text-[var(--muted)] mb-1">
+                  Nadimak
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
+                  placeholder="Vaš jedinstveni nadimak"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-[var(--muted)] mb-1">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
+                  placeholder="you@example.com"
+                />
+              </div>
+            </>
+          )}
+
+          {!isSignUp && (
             <div>
               <label className="block text-sm text-[var(--muted)] mb-1">
-                Ime za prikaz
+                Email ili nadimak
               </label>
               <input
                 type="text"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
+                required
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
                 className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
-                placeholder="Vaš nadimak"
+                placeholder="you@example.com ili nadimak"
               />
             </div>
           )}
-
-          <div>
-            <label className="block text-sm text-[var(--muted)] mb-1">
-              Email
-            </label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
-              placeholder="you@example.com"
-            />
-          </div>
 
           <div>
             <label className="block text-sm text-[var(--muted)] mb-1">
@@ -182,6 +245,15 @@ function LoginForm() {
             </button>
           </p>
         </form>
+
+        <p className="text-center mt-4">
+          <button
+            onClick={() => router.push("/")}
+            className="text-sm text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
+          >
+            ← Nazad na početnu
+          </button>
+        </p>
       </div>
     </div>
   );
