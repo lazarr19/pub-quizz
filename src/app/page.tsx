@@ -1,309 +1,439 @@
-"use client";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { RevealSection, RevealChildren } from "./landing-animations";
 
-import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
-import AppShell from "@/components/AppShell";
+export const metadata: Metadata = {
+  title: "Ko Zna Zna (KZZ) - Priprema za kvizove i testove opšteg znanja",
+  description:
+    "Besplatna online platforma za pripremu za Slagalicu, Poteru, pub kvizove i prijemne ispite iz opšteg znanja. Vežbaj hiljade pitanja, prati napredak i postani kviz šampion!",
+  keywords: [
+    "kviz",
+    "opšte znanje",
+    "slagalica",
+    "potera",
+    "pub kviz",
+    "prijemni ispit",
+    "test znanja",
+    "Srbija",
+    "Ko Zna Zna",
+    "KZZ",
+    "kviz trener",
+    "kviz priprema",
+    "opšta kultura",
+    "opšte obrazovanje",
+    "kviz pitanja",
+    "test opšte kulture",
+  ],
+  openGraph: {
+    title: "Ko Zna Zna - Tvoja priprema za kvizove",
+    description:
+      "Vežbaj hiljade pitanja iz opšteg znanja. Pripremi se za Slagalicu, Poteru, pub kvizove i fakultetske prijemne ispite.",
+    type: "website",
+    locale: "sr_RS",
+  },
+  alternates: {
+    canonical: "/",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-snippet": -1,
+      "max-image-preview": "large",
+    },
+  },
+};
 
-interface CategoryStat {
-  category_id: string;
-  category_name: string;
-  total_questions: number;
-  answered: number;
-  correct: number;
-}
+const features = [
+  {
+    icon: "📺",
+    title: "Slagalica, Potera & TV kvizovi",
+    description:
+      "Pitanja iz kategorija koje se pojavljuju u najpopularnijim kviz emisijama u Srbiji. Vežbaj kao da si u studiju!",
+  },
+  {
+    icon: "🍺",
+    title: "Pub kvizovi",
+    description:
+      "Spremi se za kviz veče u omiljenom kafiću. Širok spektar tema - od istorije do pop kulture.",
+  },
+  {
+    icon: "🎓",
+    title: "Prijemni ispiti",
+    description:
+      "Obavezan test opšteg znanja za mnoge fakultete? KZZ te priprema sa pitanjima koja se zaista pojavljuju na ispitima.",
+  },
+  {
+    icon: "📊",
+    title: "Praćenje napretka",
+    description:
+      "Detaljne statistike po kategorijama, procenat tačnosti i pregled grešaka - sve na jednom mestu.",
+  },
+  {
+    icon: "🏆",
+    title: "Takmičenje sa drugima",
+    description:
+      "Rang lista, streak izazovi i uporedne statistike. Motiviši se takmičenjem sa prijateljima!",
+  },
+  {
+    icon: "🔄",
+    title: "Režim grešaka",
+    description:
+      "Ponavlja samo pitanja koja si pogrešno odgovorio. Najefikasniji način za učenje.",
+  },
+];
 
-export default function LobbyPage() {
-  const [stats, setStats] = useState<CategoryStat[]>([]);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [mode, setMode] = useState<"new" | "mistakes">("new");
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
-  const supabase = createClient();
+const stats = [
+  { value: "1000+", label: "Pitanja" },
+  { value: "10+", label: "Kategorija" },
+  { value: "∞", label: "Pokušaja" },
+];
 
-  useEffect(() => {
-    loadStats();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+const faqs = [
+  {
+    q: "Da li je Ko Zna Zna besplatno?",
+    a: "Da, platforma je potpuno besplatna. Napravi nalog i odmah kreni sa vežbanjem.",
+  },
+  {
+    q: "Koja pitanja se nalaze na platformi?",
+    a: "Pitanja pokrivaju širok spektar tema - geografija, istorija, nauka, sport, umetnost, pop kultura i još mnogo toga. Redovno dodajemo nova pitanja.",
+  },
+  {
+    q: "Da li mi KZZ može pomoći za Slagalicu ili Poteru?",
+    a: "Apsolutno! Pitanja su organizovana po kategorijama koje se pojavljuju u popularnim TV kviz emisijama u Srbiji.",
+  },
+  {
+    q: "Može li mi pomoći za prijemni ispit iz opšteg znanja?",
+    a: "Da, mnogi fakulteti u Srbiji zahtevaju test opšteg znanja. KZZ sadrži pitanja koja se redovno pojavljuju na ovim ispitima.",
+  },
+  {
+    q: "Kako funkcioniše režim grešaka?",
+    a: "Režim grešaka pamti sva pitanja na koja si pogrešno odgovorio i prikazuje ih ponovo. Tako najbrže učiš i popravljaš slabe tačke.",
+  },
+  {
+    q: "Da li mogu da predložim pitanje?",
+    a: "Da! Svaki korisnik može predložiti nova pitanja koja admin pregleda i odobrava za bazu.",
+  },
+];
 
-  const loadStats = async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  name: "Ko Zna Zna",
+  alternateName: "KZZ",
+  description:
+    "Besplatna online platforma za pripremu za Slagalicu, Poteru, pub kvizove i prijemne ispite iz opšteg znanja.",
+  applicationCategory: "EducationalApplication",
+  operatingSystem: "Web",
+  inLanguage: "sr",
+  offers: {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "RSD",
+  },
+};
 
-    const { data, error } = await supabase.rpc("get_player_stats", {
-      p_user_id: user.id,
-    });
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqs.map((f) => ({
+    "@type": "Question",
+    name: f.q,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: f.a,
+    },
+  })),
+};
 
-    if (!error && data) {
-      setStats(data);
-    }
-    setLoading(false);
-  };
-
-  const toggleCategory = (id: string) => {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  };
-
-  const selectAll = () => {
-    if (mode === "mistakes") {
-      const mistakeCategories = stats.filter((s) => s.answered - s.correct > 0);
-      if (selected.size === mistakeCategories.length) {
-        setSelected(new Set());
-      } else {
-        setSelected(new Set(mistakeCategories.map((s) => s.category_id)));
-      }
-    } else {
-      if (selected.size === stats.length) {
-        setSelected(new Set());
-      } else {
-        setSelected(new Set(stats.map((s) => s.category_id)));
-      }
-    }
-  };
-
-  const handleModeChange = (newMode: "new" | "mistakes") => {
-    setMode(newMode);
-    setSelected(new Set());
-  };
-
-  const startTraining = () => {
-    const ids = Array.from(selected).join(",");
-    router.push(
-      `/quiz?categories=${ids}${mode === "mistakes" ? "&mode=mistakes" : ""}`,
-    );
-  };
-
-  const totalAnswered = stats.reduce((a, s) => a + s.answered, 0);
-  const totalCorrect = stats.reduce((a, s) => a + s.correct, 0);
-  const totalQuestions = stats.reduce((a, s) => a + s.total_questions, 0);
-  const overallAccuracy =
-    totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
-  const totalMistakes = stats.reduce((a, s) => a + (s.answered - s.correct), 0);
-  const selectedMistakeCount = stats
-    .filter((s) => selected.has(s.category_id))
-    .reduce((a, s) => a + (s.answered - s.correct), 0);
-
+export default function LandingPage() {
   return (
-    <AppShell>
-      {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-8 w-8 border-2 border-[var(--accent)] border-t-transparent" />
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {/* Overall Stats Card */}
-          <div className="bg-[var(--card)] rounded-2xl p-5 border border-[var(--border)]">
-            <h2 className="text-sm font-medium text-[var(--muted)] mb-3">
-              Vaš napredak
-            </h2>
-            <div className="grid grid-cols-3 gap-4 text-center">
-              <div>
-                <div className="text-2xl font-bold">{totalAnswered}</div>
-                <div className="text-xs text-[var(--muted)]">Odgovoreno</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-[var(--success)]">
-                  {overallAccuracy}%
-                </div>
-                <div className="text-xs text-[var(--muted)]">Tačnost</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold">{totalQuestions}</div>
-                <div className="text-xs text-[var(--muted)]">Ukupno</div>
-              </div>
-            </div>
+    <div className="min-h-dvh flex flex-col">
+      {/* JSON-LD Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
+      {/* Nav */}
+      <header className="sticky top-0 z-50 bg-[var(--background)]/80 backdrop-blur-md border-b border-[var(--border)]">
+        <div className="max-w-5xl mx-auto flex items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-2 font-bold text-lg">
+            🧠 <span>KZZ</span>
           </div>
-
-          {/* Mode Toggle */}
-          <div className="flex bg-[var(--card)] rounded-xl border border-[var(--border)] p-1">
-            <button
-              onClick={() => handleModeChange("new")}
-              className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${
-                mode === "new"
-                  ? "bg-[var(--accent)] text-white shadow-sm"
-                  : "text-[var(--muted)] hover:text-[var(--foreground)]"
-              }`}
-            >
-              Nova pitanja
-            </button>
-            <button
-              onClick={() => handleModeChange("mistakes")}
-              className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${
-                mode === "mistakes"
-                  ? "bg-[var(--accent)] text-white shadow-sm"
-                  : "text-[var(--muted)] hover:text-[var(--foreground)]"
-              }`}
-            >
-              Greške{totalMistakes > 0 && ` (${totalMistakes})`}
-            </button>
-          </div>
-
-          {/* Category Selection */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold">Kategorije</h2>
-              <button
-                onClick={selectAll}
-                className="text-xs text-[var(--accent)] hover:underline"
-              >
-                {mode === "mistakes"
-                  ? selected.size ===
-                    stats.filter((s) => s.answered - s.correct > 0).length
-                    ? "Poništi sve"
-                    : "Izaberi sve"
-                  : selected.size === stats.length
-                    ? "Poništi sve"
-                    : "Izaberi sve"}
-              </button>
-            </div>
-
-            <div className="space-y-2">
-              {stats.map((stat) => {
-                const isSelected = selected.has(stat.category_id);
-                const mistakes = stat.answered - stat.correct;
-                const isDisabledByMode = mode === "mistakes" && mistakes === 0;
-                const progress =
-                  stat.total_questions > 0
-                    ? (stat.answered / stat.total_questions) * 100
-                    : 0;
-                const accuracy =
-                  stat.answered > 0
-                    ? Math.round((stat.correct / stat.answered) * 100)
-                    : 0;
-                const isComplete =
-                  mode === "new"
-                    ? stat.total_questions > 0 &&
-                      stat.answered === stat.total_questions
-                    : mistakes === 0;
-
-                return (
-                  <button
-                    key={stat.category_id}
-                    onClick={() =>
-                      !isDisabledByMode && toggleCategory(stat.category_id)
-                    }
-                    disabled={isDisabledByMode}
-                    className={`w-full text-left bg-[var(--card)] rounded-xl p-4 border transition-all ${
-                      isDisabledByMode
-                        ? "border-[var(--border)] opacity-40 cursor-not-allowed"
-                        : isSelected
-                          ? "border-[var(--accent)] bg-[var(--accent)]/5"
-                          : "border-[var(--border)] hover:border-[var(--border)]/80"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${
-                            isSelected
-                              ? "bg-[var(--accent)] border-[var(--accent)]"
-                              : "border-[var(--border)]"
-                          }`}
-                        >
-                          {isSelected && (
-                            <svg
-                              className="w-3 h-3 text-white"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                              strokeWidth={3}
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M5 13l4 4L19 7"
-                              />
-                            </svg>
-                          )}
-                        </div>
-                        <span className="font-medium text-sm">
-                          {stat.category_name}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {mode === "new" ? (
-                          <>
-                            {isComplete && (
-                              <span className="text-[10px] bg-[var(--success)]/20 text-[var(--success)] px-2 py-0.5 rounded-full font-medium">
-                                GOTOVO
-                              </span>
-                            )}
-                            <span className="text-xs text-[var(--muted)]">
-                              {stat.answered}/{stat.total_questions}
-                            </span>
-                          </>
-                        ) : (
-                          <>
-                            {mistakes === 0 ? (
-                              <span className="text-[10px] bg-[var(--success)]/20 text-[var(--success)] px-2 py-0.5 rounded-full font-medium">
-                                SVE TAČNO
-                              </span>
-                            ) : (
-                              <span className="text-xs text-[var(--error)]">
-                                {mistakes} greš{mistakes === 1 ? "ka" : "ke"}
-                              </span>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Progress bar - only in new mode */}
-                    {mode === "new" && (
-                      <div className="h-1.5 bg-[var(--background)] rounded-full overflow-hidden">
-                        <div
-                          className="h-full rounded-full transition-all duration-500"
-                          style={{
-                            width: `${progress}%`,
-                            backgroundColor:
-                              accuracy >= 70
-                                ? "var(--success)"
-                                : accuracy >= 40
-                                  ? "var(--accent)"
-                                  : "var(--error)",
-                          }}
-                        />
-                      </div>
-                    )}
-
-                    {mode === "new" && stat.answered > 0 && (
-                      <div className="text-[11px] text-[var(--muted)] mt-1.5">
-                        {accuracy}% tačnost
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Start Button */}
-          <button
-            onClick={startTraining}
-            disabled={selected.size === 0}
-            className="w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] disabled:opacity-30 disabled:cursor-not-allowed text-white font-semibold rounded-xl px-4 py-4 text-sm transition-colors sticky bottom-4"
+          <Link
+            href="/login"
+            className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-sm font-semibold rounded-xl px-5 py-2 transition-colors"
           >
-            {mode === "mistakes" ? "Započni vežbu" : "Započni trening"}
-            {selected.size > 0 && (
-              <span className="ml-1 opacity-70">
-                {mode === "mistakes"
-                  ? `(${selectedMistakeCount} greš${selectedMistakeCount === 1 ? "ka" : "ke"})`
-                  : `(${selected.size} ${selected.size === 1 ? "kategorija" : "kategorije"})`}
-              </span>
-            )}
-          </button>
+            Prijavi se
+          </Link>
         </div>
-      )}
-    </AppShell>
+      </header>
+
+      {/* Hero */}
+      <section className="flex-1 flex flex-col items-center justify-center text-center px-4 pt-16 pb-12">
+        <div className="max-w-2xl mx-auto space-y-6">
+          <span className="inline-block bg-[var(--accent)]/10 text-[var(--accent)] text-xs font-semibold px-4 py-1.5 rounded-full border border-[var(--accent)]/20 animate-fade-in">
+            Besplatna platforma za vežbanje
+          </span>
+
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight text-balance animate-fade-in-up">
+            Ko Zna <span className="text-[var(--accent)]">Zna</span>
+          </h1>
+          <p
+            className="text-lg sm:text-xl text-[var(--muted)] max-w-lg mx-auto text-balance animate-fade-in-up"
+            style={{ animationDelay: "0.1s" }}
+          >
+            Pripremi se za Slagalicu, Poteru, pub kvizove i prijemne ispite iz
+            opšteg znanja - sve na jednom mestu.
+          </p>
+
+          <div
+            className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2 animate-fade-in-up"
+            style={{ animationDelay: "0.2s" }}
+          >
+            <Link
+              href="/login"
+              className="w-full sm:w-auto bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold rounded-xl px-8 py-4 text-sm transition-colors hover:scale-105 active:scale-95 transform"
+            >
+              Započni vežbanje →
+            </Link>
+          </div>
+
+          {/* Hero image placeholder */}
+          <div
+            className="mt-10 bg-[var(--card)] border border-[var(--border)] rounded-2xl aspect-video max-w-xl mx-auto flex items-center justify-center animate-scale-in"
+            style={{ animationDelay: "0.35s" }}
+          >
+            <span className="text-[var(--muted)] text-sm">
+              {/* TODO: Dodaj hero sliku ili screenshot aplikacije */}[ Hero
+              slika / Screenshot aplikacije ]
+            </span>
+          </div>
+        </div>
+      </section>
+
+      {/* Stats bar */}
+      <RevealSection className="border-y border-[var(--border)] bg-[var(--card)]">
+        <div className="max-w-3xl mx-auto grid grid-cols-3 divide-x divide-[var(--border)]">
+          {stats.map((s) => (
+            <div key={s.label} className="text-center py-8 px-4">
+              <div className="text-3xl sm:text-4xl font-bold text-[var(--accent)]">
+                {s.value}
+              </div>
+              <div className="text-sm text-[var(--muted)] mt-1">{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </RevealSection>
+
+      {/* Use cases / Why KZZ */}
+      <section className="py-16 px-4">
+        <div className="max-w-4xl mx-auto">
+          <RevealSection className="text-center mb-12">
+            <h2 className="text-2xl sm:text-3xl font-bold">
+              Zašto <span className="text-[var(--accent)]">KZZ</span>?
+            </h2>
+            <p className="text-[var(--muted)] mt-3 max-w-md mx-auto text-balance">
+              Jedna platforma, sve što ti treba za pripremu. Bez obzira da li
+              ideš na kviz veče ili polažeš prijemni.
+            </p>
+          </RevealSection>
+
+          <RevealChildren className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {features.map((f) => (
+              <div
+                key={f.title}
+                className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 hover:border-[var(--accent)]/30 hover:-translate-y-1 transition-all duration-300"
+              >
+                <div className="text-3xl mb-3">{f.icon}</div>
+                <h3 className="font-semibold text-sm mb-2">{f.title}</h3>
+                <p className="text-[var(--muted)] text-sm leading-relaxed">
+                  {f.description}
+                </p>
+              </div>
+            ))}
+          </RevealChildren>
+        </div>
+      </section>
+
+      {/* How it works */}
+      <section className="py-16 px-4 bg-[var(--card)] border-y border-[var(--border)]">
+        <div className="max-w-3xl mx-auto text-center">
+          <RevealSection>
+            <h2 className="text-2xl sm:text-3xl font-bold mb-12">
+              Kako funkcioniše?
+            </h2>
+          </RevealSection>
+
+          <RevealChildren className="grid sm:grid-cols-3 gap-8">
+            {[
+              {
+                step: "1",
+                title: "Napravi nalog",
+                desc: "Registruj se za par sekundi i odmah kreni sa vežbanjem.",
+              },
+              {
+                step: "2",
+                title: "Izaberi kategorije",
+                desc: "Odaberi teme koje želiš da vežbaš - od geografije do sporta.",
+              },
+              {
+                step: "3",
+                title: "Vežbaj i napreduj",
+                desc: "Odgovaraj na pitanja, prati statistiku i poboljšavaj rezultate.",
+              },
+            ].map((item) => (
+              <div key={item.step} className="space-y-3">
+                <div className="w-12 h-12 rounded-full bg-[var(--accent)]/10 border border-[var(--accent)]/20 flex items-center justify-center mx-auto text-[var(--accent)] font-bold text-lg">
+                  {item.step}
+                </div>
+                <h3 className="font-semibold">{item.title}</h3>
+                <p className="text-sm text-[var(--muted)]">{item.desc}</p>
+              </div>
+            ))}
+          </RevealChildren>
+        </div>
+      </section>
+
+      {/* Testimonial / Social proof placeholder */}
+      <RevealSection className="py-16 px-4">
+        <div className="max-w-3xl mx-auto text-center space-y-8">
+          <h2 className="text-2xl sm:text-3xl font-bold">Šta kažu korisnici</h2>
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            {/* Placeholder testimonial cards */}
+            {[1, 2].map((i) => (
+              <div
+                key={i}
+                className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 text-left hover:-translate-y-1 transition-transform duration-300"
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  {/* TODO: Dodaj avatar sliku */}
+                  <div className="w-10 h-10 rounded-full bg-[var(--accent)]/10 border border-[var(--accent)]/20 flex items-center justify-center text-sm">
+                    [ ]
+                  </div>
+                  <div>
+                    <div className="font-medium text-sm">[ Ime korisnika ]</div>
+                    <div className="text-xs text-[var(--muted)]">
+                      [ Opis korisnika ]
+                    </div>
+                  </div>
+                </div>
+                <p className="text-sm text-[var(--muted)] leading-relaxed italic">
+                  &ldquo;[ Tekst recenzije korisnika ]&rdquo;
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </RevealSection>
+
+      {/* FAQ */}
+      <section className="py-16 px-4 bg-[var(--card)] border-y border-[var(--border)]">
+        <div className="max-w-2xl mx-auto">
+          <RevealSection className="text-center mb-10">
+            <h2 className="text-2xl sm:text-3xl font-bold">
+              Često postavljana pitanja
+            </h2>
+          </RevealSection>
+
+          <RevealChildren className="space-y-3">
+            {faqs.map((faq) => (
+              <details
+                key={faq.q}
+                className="group bg-[var(--background)] border border-[var(--border)] rounded-xl overflow-hidden"
+              >
+                <summary className="flex items-center justify-between cursor-pointer px-5 py-4 text-sm font-medium hover:bg-[var(--card-hover)] transition-colors list-none">
+                  {faq.q}
+                  <svg
+                    className="w-4 h-4 text-[var(--muted)] shrink-0 ml-3 transition-transform duration-200 group-open:rotate-180"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </summary>
+                <div className="px-5 pb-4 text-sm text-[var(--muted)] leading-relaxed">
+                  {faq.a}
+                </div>
+              </details>
+            ))}
+          </RevealChildren>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <RevealSection className="py-16 px-4">
+        <div className="max-w-lg mx-auto bg-[var(--card)] border border-[var(--border)] rounded-2xl p-8 sm:p-12 text-center space-y-5">
+          <h2 className="text-2xl sm:text-3xl font-bold">
+            Spreman da testiraš znanje?
+          </h2>
+          <p className="text-[var(--muted)] text-sm">
+            Pridruži se korisnicima koji već vežbaju na KZZ platformi. Potpuno
+            besplatno.
+          </p>
+          <Link
+            href="/login"
+            className="inline-block bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold rounded-xl px-8 py-4 text-sm transition-all hover:scale-105 active:scale-95 transform"
+          >
+            Kreiraj nalog besplatno →
+          </Link>
+        </div>
+      </RevealSection>
+
+      {/* Kontakt */}
+      <RevealSection className="py-16 px-4">
+        <div className="max-w-lg mx-auto text-center space-y-4">
+          <h2 className="text-2xl sm:text-3xl font-bold">Kontakt</h2>
+          <p className="text-[var(--muted)] text-sm">
+            Imaš pitanje, predlog ili povratnu informaciju? Javi nam se!
+          </p>
+          <a
+            href="mailto:radojevic.laza@gmail.com"
+            className="inline-flex items-center gap-2 text-[var(--accent)] hover:text-[var(--accent-hover)] font-medium text-sm transition-colors"
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+              />
+            </svg>
+            radojevic.laza@gmail.com
+          </a>
+        </div>
+      </RevealSection>
+
+      {/* Footer */}
+      <footer className="border-t border-[var(--border)] py-8 px-4">
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-[var(--muted)]">
+          <div className="flex items-center gap-2">
+            🧠{" "}
+            <span className="font-semibold text-[var(--foreground)]">
+              Ko Zna Zna
+            </span>
+          </div>
+          <p>&copy; {new Date().getFullYear()} KZZ. Sva prava zadržana.</p>
+        </div>
+      </footer>
+    </div>
   );
 }

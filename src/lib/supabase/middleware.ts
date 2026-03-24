@@ -31,9 +31,10 @@ export async function updateSession(request: NextRequest) {
 
   // Redirect unauthenticated users to login
   const isAuthPage = request.nextUrl.pathname === "/login";
+  const isLandingPage = request.nextUrl.pathname === "/";
   const isAdminPage = request.nextUrl.pathname.startsWith("/admin");
 
-  if (!user && !isAuthPage) {
+  if (!user && !isAuthPage && !isLandingPage) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
@@ -41,7 +42,7 @@ export async function updateSession(request: NextRequest) {
 
   if (user && isAuthPage) {
     const url = request.nextUrl.clone();
-    url.pathname = "/";
+    url.pathname = "/lobby";
     return NextResponse.redirect(url);
   }
 
@@ -55,7 +56,7 @@ export async function updateSession(request: NextRequest) {
 
     if (!profile?.is_admin) {
       const url = request.nextUrl.clone();
-      url.pathname = "/";
+      url.pathname = "/lobby";
       return NextResponse.redirect(url);
     }
   }

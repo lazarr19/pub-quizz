@@ -128,7 +128,7 @@ function QuizContent() {
         <div className="text-center py-20">
           <p className="text-[var(--muted)]">Niste izabrali kategorije.</p>
           <button
-            onClick={() => router.push("/")}
+            onClick={() => router.push("/lobby")}
             className="mt-4 text-[var(--accent)] hover:underline"
           >
             Nazad na početnu
@@ -172,7 +172,7 @@ function QuizContent() {
               </button>
             )}
             <button
-              onClick={() => router.push("/")}
+              onClick={() => router.push("/lobby")}
               className={`w-full font-semibold rounded-xl px-4 py-3 text-sm transition-colors ${
                 isPractice
                   ? "bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white"
@@ -195,7 +195,7 @@ function QuizContent() {
                 </span>
               )}
               <button
-                onClick={() => router.push("/")}
+                onClick={() => router.push("/lobby")}
                 className="text-[var(--error)] hover:text-[var(--error)]/80 font-medium transition-colors"
               >
                 Završi sesiju
