@@ -187,7 +187,7 @@ export default function LeaderboardPage() {
                 </span>
               </div>
               <p className="text-xs text-[var(--muted)] mt-2 pl-11">
-                Vi ste {data.current_user.rank}. — nastavite da uđete među prvih{" "}
+                Vi ste {data.current_user.rank}. - nastavite da uđete među prvih{" "}
                 {Math.min(10, data.leaderboard.length)}!
               </p>
             </div>
@@ -331,7 +331,7 @@ export default function LeaderboardPage() {
                 ) : streakData.current_user.answered_yesterday ? (
                   <div className="text-center">
                     <p className="text-sm text-yellow-400">
-                      ⏳ Vaš niz je istekao — ali odgovorite tačno danas da
+                      ⏳ Vaš niz je istekao - ali odgovorite tačno danas da
                       započnete novi!
                     </p>
                   </div>

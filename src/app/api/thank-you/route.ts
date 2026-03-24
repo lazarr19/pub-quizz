@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
   }
 
-  // Look up user email from auth.users — use service role if available
+  // Look up user email from auth.users - use service role if available
   let email: string | null = null;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (serviceKey) {
@@ -48,11 +48,11 @@ export async function POST(req: NextRequest) {
 
   if (!email) {
     console.log(
-      `[Thank-you] Could not resolve email for user ${userId} — set SUPABASE_SERVICE_ROLE_KEY to enable.`,
+      `[Thank-you] Could not resolve email for user ${userId} - set SUPABASE_SERVICE_ROLE_KEY to enable.`,
     );
     return NextResponse.json({
       success: true,
-      note: "Email not sent — no service role key",
+      note: "Email not sent - no service role key",
     });
   }
 
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
 <p>Vaše predloženo pitanje je prihvaćeno i dodato u kviz:</p>
 <blockquote style="border-left:3px solid #6366f1;padding-left:12px;color:#666;">${questionContent}</blockquote>
 <p>Nastavite sa predlozima!</p>
-<p>— Tim Kviz Trenera</p>`,
+<p>- Tim Kviz Trenera</p>`,
       }),
     });
 
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
     }
   } else {
     console.log(
-      `[Thank-you email] Would send to ${email} for question: "${questionContent}" — set RESEND_API_KEY to enable.`,
+      `[Thank-you email] Would send to ${email} for question: "${questionContent}" - set RESEND_API_KEY to enable.`,
     );
   }
 

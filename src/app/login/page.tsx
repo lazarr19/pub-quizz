@@ -70,7 +70,7 @@ function LoginForm() {
       if (error) {
         setError(error.message);
       } else {
-        router.push("/");
+        router.push("/lobby");
         router.refresh();
       }
     }
@@ -84,9 +84,9 @@ function LoginForm() {
         {/* Logo / Header */}
         <div className="text-center mb-8">
           <div className="text-5xl mb-3">🧠</div>
-          <h1 className="text-2xl font-bold">Kviz Trener</h1>
+          <h1 className="text-2xl font-bold">Ko Zna Zna</h1>
           <p className="text-[var(--muted)] text-sm mt-1">
-            Vežbaj sa timom, osvoji kviz
+            Pripremi se za kviz, osvoji znanje
           </p>
         </div>
 

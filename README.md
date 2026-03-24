@@ -4,13 +4,13 @@ A mobile-optimized web app for training your crew for pub quizzes.
 
 ## Features
 
-- **Player Login** — Email/password auth for your mates
-- **Category Selection** — Pick categories to practice, see progress on each
-- **Quiz Loop** — Random unanswered questions, immediate feedback, tracks history
-- **Redo** — When a category is complete, reset and practice again
-- **Statistics** — Per-category accuracy breakdown and overall progress
-- **Admin Panel** — Add/delete questions (text or image), manage categories
-- **Role-Based Access** — Admin routes protected by middleware
+- **Player Login** - Email/password auth for your mates
+- **Category Selection** - Pick categories to practice, see progress on each
+- **Quiz Loop** - Random unanswered questions, immediate feedback, tracks history
+- **Redo** - When a category is complete, reset and practice again
+- **Statistics** - Per-category accuracy breakdown and overall progress
+- **Admin Panel** - Add/delete questions (text or image), manage categories
+- **Role-Based Access** - Admin routes protected by middleware
 
 ## Tech Stack
 
@@ -87,7 +87,7 @@ This creates all tables, RLS policies, RPC functions, storage bucket, and seed c
 ### 5. Create an admin user
 
 1. Sign up through the app's login page
-2. In Supabase Studio, Table Editor, `profiles` table — set `is_admin = true` for your user
+2. In Supabase Studio, Table Editor, `profiles` table - set `is_admin = true` for your user
 
 ### 6. Run the dev server
 
@@ -99,7 +99,7 @@ Open http://localhost:3000
 
 ### 7. (Optional) Disable email confirmation for local dev
 
-In Supabase Studio, Authentication, Providers, Email — turn off "Confirm email".
+In Supabase Studio, Authentication, Providers, Email - turn off "Confirm email".
 
 ## Usage
 

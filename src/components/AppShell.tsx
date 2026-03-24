@@ -43,10 +43,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-50 bg-[var(--card)]/80 backdrop-blur-md border-b border-[var(--border)]">
         <div className="max-w-lg mx-auto flex items-center justify-between px-4 py-3">
           <button
-            onClick={() => router.push("/")}
+            onClick={() => router.push("/lobby")}
             className="flex items-center gap-2 font-bold text-lg"
           >
-            🧠 <span className="hidden sm:inline">PQT</span>
+            🧠 <span className="hidden sm:inline">KZZ</span>
           </button>
 
           <div className="flex items-center gap-3">
