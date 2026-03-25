@@ -100,7 +100,7 @@ export default function QuestionCard({
 
         {answered && (
           <a
-            href={`https://www.google.com/search?q=${encodeURIComponent(question.content)}`}
+            href={`https://www.google.com/search?q=${encodeURIComponent(question.content.replace(/["""„“''‚‛«»‹›]/g, ""))}`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 text-xs text-[var(--accent)] hover:underline mt-2"
