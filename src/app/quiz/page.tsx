@@ -25,6 +25,7 @@ function QuizContent() {
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isCorrect, setIsCorrect] = useState(false);
   const [allComplete, setAllComplete] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
   const [questionCount, setQuestionCount] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
   const queueRef = useRef<Question[]>([]);
@@ -59,7 +60,11 @@ function QuizContent() {
       p_exclude_ids: Array.from(seenIdsRef.current),
     });
 
-    if (!error && data && data.length > 0) {
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (data && data.length > 0) {
       const batch = data as Question[];
       batch.forEach((q) => seenIdsRef.current.add(q.id));
       return batch;
@@ -96,6 +101,7 @@ function QuizContent() {
       try {
         setAnswered(false);
         setSelectedOption(null);
+        setFetchError(false);
 
         if (queueRef.current.length === 0 || forceRefetch) {
           setLoading(true);
@@ -118,6 +124,9 @@ function QuizContent() {
 
         // Trigger prefetch in background if queue is getting low
         prefetchIfNeeded();
+      } catch {
+        setFetchError(true);
+        setLoading(false);
       } finally {
         fetchingRef.current = false;
       }
@@ -208,6 +217,18 @@ function QuizContent() {
       {loading ? (
         <div className="flex items-center justify-center py-20">
           <div className="animate-spin rounded-full h-8 w-8 border-2 border-[var(--accent)] border-t-transparent" />
+        </div>
+      ) : fetchError ? (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <p className="text-[var(--muted)] mb-4">
+            Došlo je do greške pri učitavanju pitanja.
+          </p>
+          <button
+            onClick={() => showNextFromQueue(true)}
+            className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold rounded-xl px-6 py-3 text-sm transition-colors"
+          >
+            Pokušaj ponovo
+          </button>
         </div>
       ) : allComplete ? (
         /* All Complete Screen */
