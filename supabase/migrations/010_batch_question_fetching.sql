@@ -60,7 +60,7 @@ RETURNS TABLE (
 DECLARE
   v_limit INT := LEAST(GREATEST(p_limit, 1), 50);
 BEGIN
-  IF p_user_id != auth.uid() THEN
+  IF auth.uid() IS NULL OR p_user_id IS DISTINCT FROM auth.uid() THEN
     RAISE EXCEPTION 'Unauthorized';
   END IF;
 

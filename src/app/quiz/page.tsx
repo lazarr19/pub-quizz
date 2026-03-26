@@ -76,13 +76,18 @@ function QuizContent() {
   const prefetchIfNeeded = useCallback(async () => {
     if (
       queueRef.current.length <= PREFETCH_THRESHOLD &&
-      !prefetchingRef.current
+      !prefetchingRef.current &&
+      !fetchingRef.current
     ) {
       prefetchingRef.current = true;
       try {
         const batch = await fetchBatch();
         if (batch.length > 0) {
-          queueRef.current.push(...batch);
+          // Dedupe against anything added while we were fetching
+          const newQuestions = batch.filter(
+            (q) => !queueRef.current.some((existing) => existing.id === q.id),
+          );
+          queueRef.current.push(...newQuestions);
         }
       } catch (error) {
         console.error("Error prefetching questions:", error);
