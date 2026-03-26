@@ -34,6 +34,15 @@ export default function AdminPage() {
             </p>
           </button>
           <button
+            onClick={() => router.push("/admin/reports")}
+            className="w-full bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 text-left hover:bg-[var(--card-hover)] transition-colors"
+          >
+            <span className="font-medium">Prijavljeni problemi</span>
+            <p className="text-xs text-[var(--muted)] mt-1">
+              Pregledajte prijave problema sa pitanjima
+            </p>
+          </button>
+          <button
             onClick={() => router.push("/admin/new")}
             className="w-full bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 text-left hover:bg-[var(--card-hover)] transition-colors"
           >
