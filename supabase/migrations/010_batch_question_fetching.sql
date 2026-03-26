@@ -1,5 +1,9 @@
 -- Migration: Batch question fetching with prefetch dedup support
 
+-- Drop old 2-param overloads so only the new signatures exist
+DROP FUNCTION IF EXISTS get_next_question(UUID, UUID[]);
+DROP FUNCTION IF EXISTS get_next_mistake_question(UUID, UUID[]);
+
 -- Update get_next_question to support batch fetching + exclude already-fetched IDs
 CREATE OR REPLACE FUNCTION get_next_question(
   p_user_id UUID,
