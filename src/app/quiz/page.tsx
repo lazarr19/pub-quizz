@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, Suspense } from "react";
+import { useEffect, useState, useCallback, useRef, Suspense } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter, useSearchParams } from "next/navigation";
 import AppShell from "@/components/AppShell";
@@ -27,22 +27,23 @@ function QuizContent() {
   const [allComplete, setAllComplete] = useState(false);
   const [questionCount, setQuestionCount] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
+  const queueRef = useRef<Question[]>([]);
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createClient();
 
+  const BATCH_SIZE = 10;
+  const PREFETCH_THRESHOLD = 2;
   const categoryIds = searchParams.get("categories")?.split(",") || [];
   const isPractice = searchParams.get("mode") === "mistakes";
+  const seenIdsRef = useRef<Set<string>>(new Set());
+  const prefetchingRef = useRef(false);
 
-  const fetchQuestion = useCallback(async () => {
-    setLoading(true);
-    setAnswered(false);
-    setSelectedOption(null);
-
+  const fetchBatch = useCallback(async (): Promise<Question[]> => {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) return [];
 
     const rpcName = isPractice
       ? "get_next_mistake_question"
@@ -50,22 +51,68 @@ function QuizContent() {
     const { data, error } = await supabase.rpc(rpcName, {
       p_user_id: user.id,
       p_category_ids: categoryIds,
+      p_limit: BATCH_SIZE,
+      p_exclude_ids: Array.from(seenIdsRef.current),
     });
 
     if (!error && data && data.length > 0) {
-      setQuestion(data[0]);
-      setAllComplete(false);
-    } else {
-      setQuestion(null);
-      setAllComplete(true);
+      const batch = data as Question[];
+      batch.forEach((q) => seenIdsRef.current.add(q.id));
+      return batch;
     }
-    setLoading(false);
+    return [];
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const prefetchIfNeeded = useCallback(async () => {
+    if (
+      queueRef.current.length <= PREFETCH_THRESHOLD &&
+      !prefetchingRef.current
+    ) {
+      prefetchingRef.current = true;
+      const batch = await fetchBatch();
+      if (batch.length > 0) {
+        queueRef.current.push(...batch);
+      }
+      prefetchingRef.current = false;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchBatch]);
+
+  const showNextFromQueue = useCallback(
+    async (forceRefetch = false) => {
+      setAnswered(false);
+      setSelectedOption(null);
+
+      if (queueRef.current.length === 0 || forceRefetch) {
+        setLoading(true);
+        const batch = await fetchBatch();
+        if (batch.length === 0) {
+          setQuestion(null);
+          setAllComplete(true);
+          setLoading(false);
+          return;
+        }
+        queueRef.current = forceRefetch
+          ? batch
+          : [...queueRef.current, ...batch];
+      }
+
+      const next = queueRef.current.shift()!;
+      setQuestion(next);
+      setAllComplete(false);
+      setLoading(false);
+
+      // Trigger prefetch in background if queue is getting low
+      prefetchIfNeeded();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    },
+    [fetchBatch, prefetchIfNeeded],
+  );
+
   useEffect(() => {
     if (categoryIds.length > 0) {
-      fetchQuestion();
+      showNextFromQueue(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -103,7 +150,7 @@ function QuizContent() {
   };
 
   const handleNext = () => {
-    fetchQuestion();
+    showNextFromQueue();
   };
 
   const handleReset = async () => {
@@ -119,7 +166,9 @@ function QuizContent() {
     });
     setQuestionCount(0);
     setCorrectCount(0);
-    fetchQuestion();
+    queueRef.current = [];
+    seenIdsRef.current.clear();
+    showNextFromQueue(true);
   };
 
   if (categoryIds.length === 0) {
