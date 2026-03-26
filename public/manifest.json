@@ -1,0 +1,23 @@
+{
+  "name": "Ko Zna Zna",
+  "short_name": "KZZ",
+  "description": "Besplatna online platforma za pripremu za Slagalicu, Poteru, pub kvizove i prijemne ispite iz opšteg znanja.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f0f1a",
+  "theme_color": "#0f0f1a",
+  "lang": "sr",
+  "icons": [
+    {
+      "src": "/kzz-logo.png",
+      "sizes": "any",
+      "type": "image/png"
+    },
+    {
+      "src": "/kzz-logo.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

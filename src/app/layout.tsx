@@ -35,10 +35,27 @@ export const metadata: Metadata = {
     type: "website",
     locale: "sr_RS",
     siteName: "Ko Zna Zna",
+    images: [
+      {
+        url: "/hero.png",
+        width: 1200,
+        height: 630,
+        alt: "Ko Zna Zna - platforma za kvizove iz opšteg znanja",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Ko Zna Zna - Tvoja priprema za kvizove",
+    description:
+      "Vežbaj hiljade pitanja iz opšteg znanja. Pripremi se za Slagalicu, Poteru, pub kvizove i prijemne ispite.",
+    images: ["/hero.png"],
   },
   icons: {
     icon: "/kzz-logo.ico",
+    apple: "/kzz-logo.png",
   },
+  manifest: "/manifest.json",
 };
 
 export const viewport: Viewport = {

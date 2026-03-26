@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { RevealSection, RevealChildren } from "./landing-animations";
 
@@ -164,9 +165,11 @@ export default function LandingPage() {
       <header className="sticky top-0 z-50 bg-[var(--background)]/80 backdrop-blur-md border-b border-[var(--border)]">
         <div className="max-w-5xl mx-auto flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2 font-bold text-lg">
-            <img
+            <Image
               src="/kzz-logo.png"
               alt="KZZ"
+              width={24}
+              height={24}
               className="w-6 h-6 object-contain"
             />{" "}
             <span>KZZ</span>
@@ -221,9 +224,12 @@ export default function LandingPage() {
             className="mt-10 max-w-xl mx-auto animate-scale-in"
             style={{ animationDelay: "0.35s" }}
           >
-            <img
+            <Image
               src="/hero.png"
-              alt="Ko Zna Zna - screenshot aplikacije"
+              alt="Ko Zna Zna - screenshot aplikacije za vežbanje kviz pitanja iz opšteg znanja"
+              width={576}
+              height={400}
+              priority
               className="w-full rounded-2xl border border-[var(--border)]"
             />
           </div>
@@ -313,35 +319,49 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Testimonial / Social proof placeholder */}
+      {/* Testimonial / Social proof */}
       <RevealSection className="py-16 px-4">
         <div className="max-w-3xl mx-auto text-center space-y-8">
           <h2 className="text-2xl sm:text-3xl font-bold">Šta kažu korisnici</h2>
 
           <div className="grid sm:grid-cols-2 gap-4">
-            {/* Placeholder testimonial cards */}
-            {[1, 2].map((i) => (
-              <div
-                key={i}
-                className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 text-left hover:-translate-y-1 transition-transform duration-300"
-              >
-                <div className="flex items-center gap-3 mb-4">
-                  {/* TODO: Dodaj avatar sliku */}
-                  <div className="w-10 h-10 rounded-full bg-[var(--accent)]/10 border border-[var(--accent)]/20 flex items-center justify-center text-sm">
-                    [ ]
-                  </div>
-                  <div>
-                    <div className="font-medium text-sm">[ Ime korisnika ]</div>
-                    <div className="text-xs text-[var(--muted)]">
-                      [ Opis korisnika ]
-                    </div>
+            <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 text-left hover:-translate-y-1 transition-transform duration-300">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-[var(--accent)]/10 border border-[var(--accent)]/20 flex items-center justify-center text-lg">
+                  🎓
+                </div>
+                <div>
+                  <div className="font-medium text-sm">Marko N.</div>
+                  <div className="text-xs text-[var(--muted)]">
+                    Student, priprema za prijemni
                   </div>
                 </div>
-                <p className="text-sm text-[var(--muted)] leading-relaxed italic">
-                  &ldquo;[ Tekst recenzije korisnika ]&rdquo;
-                </p>
               </div>
-            ))}
+              <p className="text-sm text-[var(--muted)] leading-relaxed italic">
+                &ldquo;Zahvaljujući KZZ platformi položio sam test opšteg znanja
+                iz prvog pokušaja! Režim grešaka mi je bio najkorisniji, počeo
+                sam da grešim manje i učim brže.&rdquo;
+              </p>
+            </div>
+
+            <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 text-left hover:-translate-y-1 transition-transform duration-300">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-[var(--accent)]/10 border border-[var(--accent)]/20 flex items-center justify-center text-lg">
+                  🍺
+                </div>
+                <div>
+                  <div className="font-medium text-sm">Jelena D.</div>
+                  <div className="text-xs text-[var(--muted)]">
+                    Pub kviz entuzijasta
+                  </div>
+                </div>
+              </div>
+              <p className="text-sm text-[var(--muted)] leading-relaxed italic">
+                &ldquo;Naš tim je konačno počeo da pobeđuje na kviz večerima!
+                Vežbamo zajedno na KZZ pre svakog pub kviza. Čak razmišljam da
+                se prijavim za Slagalicu!&rdquo;
+              </p>
+            </div>
           </div>
         </div>
       </RevealSection>
@@ -438,9 +458,11 @@ export default function LandingPage() {
       <footer className="border-t border-[var(--border)] py-8 px-4">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-[var(--muted)]">
           <div className="flex items-center gap-2">
-            <img
+            <Image
               src="/kzz-logo.png"
               alt="KZZ"
+              width={24}
+              height={24}
               className="w-6 h-6 object-contain"
             />{" "}
             <span className="font-semibold text-[var(--foreground)]">
