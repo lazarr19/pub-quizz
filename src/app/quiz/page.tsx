@@ -38,12 +38,16 @@ function QuizContent() {
   const isPractice = searchParams.get("mode") === "mistakes";
   const seenIdsRef = useRef<Set<string>>(new Set());
   const prefetchingRef = useRef(false);
+  const fetchingRef = useRef(false);
 
   const fetchBatch = useCallback(async (): Promise<Question[]> => {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) return [];
+    if (!user) {
+      router.push("/login");
+      return [];
+    }
 
     const rpcName = isPractice
       ? "get_next_mistake_question"
@@ -70,41 +74,53 @@ function QuizContent() {
       !prefetchingRef.current
     ) {
       prefetchingRef.current = true;
-      const batch = await fetchBatch();
-      if (batch.length > 0) {
-        queueRef.current.push(...batch);
+      try {
+        const batch = await fetchBatch();
+        if (batch.length > 0) {
+          queueRef.current.push(...batch);
+        }
+      } catch (error) {
+        console.error("Error prefetching questions:", error);
+      } finally {
+        prefetchingRef.current = false;
       }
-      prefetchingRef.current = false;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchBatch]);
 
   const showNextFromQueue = useCallback(
     async (forceRefetch = false) => {
-      setAnswered(false);
-      setSelectedOption(null);
+      if (fetchingRef.current) return;
+      fetchingRef.current = true;
 
-      if (queueRef.current.length === 0 || forceRefetch) {
-        setLoading(true);
-        const batch = await fetchBatch();
-        if (batch.length === 0) {
-          setQuestion(null);
-          setAllComplete(true);
-          setLoading(false);
-          return;
+      try {
+        setAnswered(false);
+        setSelectedOption(null);
+
+        if (queueRef.current.length === 0 || forceRefetch) {
+          setLoading(true);
+          const batch = await fetchBatch();
+          if (batch.length === 0) {
+            setQuestion(null);
+            setAllComplete(true);
+            setLoading(false);
+            return;
+          }
+          queueRef.current = forceRefetch
+            ? batch
+            : [...queueRef.current, ...batch];
         }
-        queueRef.current = forceRefetch
-          ? batch
-          : [...queueRef.current, ...batch];
+
+        const next = queueRef.current.shift()!;
+        setQuestion(next);
+        setAllComplete(false);
+        setLoading(false);
+
+        // Trigger prefetch in background if queue is getting low
+        prefetchIfNeeded();
+      } finally {
+        fetchingRef.current = false;
       }
-
-      const next = queueRef.current.shift()!;
-      setQuestion(next);
-      setAllComplete(false);
-      setLoading(false);
-
-      // Trigger prefetch in background if queue is getting low
-      prefetchIfNeeded();
       // eslint-disable-next-line react-hooks/exhaustive-deps
     },
     [fetchBatch, prefetchIfNeeded],

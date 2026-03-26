@@ -18,7 +18,13 @@ RETURNS TABLE (
   option_3 TEXT,
   correct_option SMALLINT
 ) AS $$
+DECLARE
+  v_limit INT := LEAST(GREATEST(p_limit, 1), 50);
 BEGIN
+  IF p_user_id != auth.uid() THEN
+    RAISE EXCEPTION 'Unauthorized';
+  END IF;
+
   RETURN QUERY
   SELECT q.id, q.category_id, q.type, q.content, q.image_url,
          q.option_1, q.option_2, q.option_3, q.correct_option
@@ -29,9 +35,9 @@ BEGIN
     )
     AND q.id != ALL(p_exclude_ids)
   ORDER BY random()
-  LIMIT p_limit;
+  LIMIT v_limit;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- Update get_next_mistake_question to support batch fetching + exclude already-fetched IDs
 CREATE OR REPLACE FUNCTION get_next_mistake_question(
@@ -51,7 +57,13 @@ RETURNS TABLE (
   option_3 TEXT,
   correct_option SMALLINT
 ) AS $$
+DECLARE
+  v_limit INT := LEAST(GREATEST(p_limit, 1), 50);
 BEGIN
+  IF p_user_id != auth.uid() THEN
+    RAISE EXCEPTION 'Unauthorized';
+  END IF;
+
   RETURN QUERY
   SELECT q.id, q.category_id, q.type, q.content, q.image_url,
          q.option_1, q.option_2, q.option_3, q.correct_option
@@ -61,6 +73,6 @@ BEGIN
     AND ur.is_correct = false
     AND q.id != ALL(p_exclude_ids)
   ORDER BY random()
-  LIMIT p_limit;
+  LIMIT v_limit;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
