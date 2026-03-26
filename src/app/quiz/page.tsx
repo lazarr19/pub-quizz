@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, Suspense } from "react";
+import { useEffect, useState, useCallback, useRef, Suspense } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter, useSearchParams } from "next/navigation";
 import AppShell from "@/components/AppShell";
@@ -25,24 +25,30 @@ function QuizContent() {
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isCorrect, setIsCorrect] = useState(false);
   const [allComplete, setAllComplete] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
   const [questionCount, setQuestionCount] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
+  const queueRef = useRef<Question[]>([]);
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createClient();
 
+  const BATCH_SIZE = 10;
+  const PREFETCH_THRESHOLD = 2;
   const categoryIds = searchParams.get("categories")?.split(",") || [];
   const isPractice = searchParams.get("mode") === "mistakes";
+  const seenIdsRef = useRef<Set<string>>(new Set());
+  const prefetchingRef = useRef(false);
+  const fetchingRef = useRef(false);
 
-  const fetchQuestion = useCallback(async () => {
-    setLoading(true);
-    setAnswered(false);
-    setSelectedOption(null);
-
+  const fetchBatch = useCallback(async (): Promise<Question[]> => {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      router.push("/login");
+      return [];
+    }
 
     const rpcName = isPractice
       ? "get_next_mistake_question"
@@ -50,22 +56,93 @@ function QuizContent() {
     const { data, error } = await supabase.rpc(rpcName, {
       p_user_id: user.id,
       p_category_ids: categoryIds,
+      p_limit: BATCH_SIZE,
+      p_exclude_ids: Array.from(seenIdsRef.current),
     });
 
-    if (!error && data && data.length > 0) {
-      setQuestion(data[0]);
-      setAllComplete(false);
-    } else {
-      setQuestion(null);
-      setAllComplete(true);
+    if (error) {
+      throw new Error(error.message);
     }
-    setLoading(false);
+
+    if (data && data.length > 0) {
+      const batch = data as Question[];
+      batch.forEach((q) => seenIdsRef.current.add(q.id));
+      return batch;
+    }
+    return [];
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const prefetchIfNeeded = useCallback(async () => {
+    if (
+      queueRef.current.length <= PREFETCH_THRESHOLD &&
+      !prefetchingRef.current &&
+      !fetchingRef.current
+    ) {
+      prefetchingRef.current = true;
+      try {
+        const batch = await fetchBatch();
+        if (batch.length > 0) {
+          // Dedupe against anything added while we were fetching
+          const newQuestions = batch.filter(
+            (q) => !queueRef.current.some((existing) => existing.id === q.id),
+          );
+          queueRef.current.push(...newQuestions);
+        }
+      } catch (error) {
+        console.error("Error prefetching questions:", error);
+      } finally {
+        prefetchingRef.current = false;
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchBatch]);
+
+  const showNextFromQueue = useCallback(
+    async (forceRefetch = false) => {
+      if (fetchingRef.current) return;
+      fetchingRef.current = true;
+
+      try {
+        setAnswered(false);
+        setSelectedOption(null);
+        setFetchError(false);
+
+        if (queueRef.current.length === 0 || forceRefetch) {
+          setLoading(true);
+          const batch = await fetchBatch();
+          if (batch.length === 0) {
+            setQuestion(null);
+            setAllComplete(true);
+            setLoading(false);
+            return;
+          }
+          queueRef.current = forceRefetch
+            ? batch
+            : [...queueRef.current, ...batch];
+        }
+
+        const next = queueRef.current.shift()!;
+        setQuestion(next);
+        setAllComplete(false);
+        setLoading(false);
+
+        // Trigger prefetch in background if queue is getting low
+        prefetchIfNeeded();
+      } catch {
+        setFetchError(true);
+        setLoading(false);
+      } finally {
+        fetchingRef.current = false;
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    },
+    [fetchBatch, prefetchIfNeeded],
+  );
+
   useEffect(() => {
     if (categoryIds.length > 0) {
-      fetchQuestion();
+      showNextFromQueue(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -103,7 +180,7 @@ function QuizContent() {
   };
 
   const handleNext = () => {
-    fetchQuestion();
+    showNextFromQueue();
   };
 
   const handleReset = async () => {
@@ -119,7 +196,9 @@ function QuizContent() {
     });
     setQuestionCount(0);
     setCorrectCount(0);
-    fetchQuestion();
+    queueRef.current = [];
+    seenIdsRef.current.clear();
+    showNextFromQueue(true);
   };
 
   if (categoryIds.length === 0) {
@@ -143,6 +222,18 @@ function QuizContent() {
       {loading ? (
         <div className="flex items-center justify-center py-20">
           <div className="animate-spin rounded-full h-8 w-8 border-2 border-[var(--accent)] border-t-transparent" />
+        </div>
+      ) : fetchError ? (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <p className="text-[var(--muted)] mb-4">
+            Došlo je do greške pri učitavanju pitanja.
+          </p>
+          <button
+            onClick={() => showNextFromQueue(true)}
+            className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold rounded-xl px-6 py-3 text-sm transition-colors"
+          >
+            Pokušaj ponovo
+          </button>
         </div>
       ) : allComplete ? (
         /* All Complete Screen */
