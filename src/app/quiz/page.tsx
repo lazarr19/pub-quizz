@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter, useSearchParams } from "next/navigation";
 import AppShell from "@/components/AppShell";
 import QuestionCard from "@/components/QuestionCard";
+import confetti from "canvas-confetti";
 
 interface Question {
   id: string;
@@ -28,6 +29,7 @@ function QuizContent() {
   const [fetchError, setFetchError] = useState(false);
   const [questionCount, setQuestionCount] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
+  const [streak, setStreak] = useState(0);
   const queueRef = useRef<Question[]>([]);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -155,7 +157,18 @@ function QuizContent() {
     setIsCorrect(correct);
     setAnswered(true);
     setQuestionCount((c) => c + 1);
-    if (correct) setCorrectCount((c) => c + 1);
+    if (correct) {
+      setCorrectCount((c) => c + 1);
+      setStreak((s) => {
+        const next = s + 1;
+        if (next === 5) {
+          confetti({ particleCount: 120, spread: 80, origin: { y: 0.7 } });
+        }
+        return next;
+      });
+    } else {
+      setStreak(0);
+    }
 
     const {
       data: { user },
@@ -196,6 +209,7 @@ function QuizContent() {
     });
     setQuestionCount(0);
     setCorrectCount(0);
+    setStreak(0);
     queueRef.current = [];
     seenIdsRef.current.clear();
     showNextFromQueue(true);
@@ -280,6 +294,11 @@ function QuizContent() {
           <div className="flex items-center justify-between text-sm text-[var(--muted)]">
             <span>Pitanje #{questionCount + (answered ? 0 : 1)}</span>
             <div className="flex items-center gap-3">
+              {streak >= 2 && (
+                <span className="text-orange-400 font-semibold">
+                  🔥 {streak}
+                </span>
+              )}
               {questionCount > 0 && (
                 <span>
                   {correctCount}/{questionCount} tačno
