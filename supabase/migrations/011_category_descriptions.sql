@@ -1,3 +1,13 @@
+-- Add description and emoji columns to categories for public /kategorije page
+ALTER TABLE categories ADD COLUMN description TEXT;
+ALTER TABLE categories ADD COLUMN emoji TEXT;
+
+-- Update RLS to allow anonymous (unauthenticated) reads so /kategorije works publicly for SEO
+DROP POLICY IF EXISTS "Anyone can read categories" ON categories;
+CREATE POLICY "Anyone can read categories" ON categories
+  FOR SELECT USING (true);
+
+
 UPDATE categories
 SET
   emoji       = v.emoji,

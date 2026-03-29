@@ -7,13 +7,21 @@ import { useRouter } from "next/navigation";
 interface Category {
   id: string;
   name: string;
+  description: string | null;
+  emoji: string | null;
 }
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [newName, setNewName] = useState("");
+  const [newDescription, setNewDescription] = useState("");
+  const [newEmoji, setNewEmoji] = useState("");
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingDescription, setEditingDescription] = useState("");
+  const [editingEmoji, setEditingEmoji] = useState("");
+  const [saving, setSaving] = useState(false);
   const router = useRouter();
   const supabase = createClient();
 
@@ -38,7 +46,11 @@ export default function CategoriesPage() {
     setAdding(true);
     const { data, error } = await supabase
       .from("categories")
-      .insert({ name: newName.trim() })
+      .insert({
+        name: newName.trim(),
+        description: newDescription.trim() || null,
+        emoji: newEmoji.trim() || null,
+      })
       .select()
       .single();
 
@@ -47,10 +59,47 @@ export default function CategoriesPage() {
         [...prev, data].sort((a, b) => a.name.localeCompare(b.name)),
       );
       setNewName("");
+      setNewDescription("");
+      setNewEmoji("");
     } else if (error) {
       alert("Failed: " + error.message);
     }
     setAdding(false);
+  };
+
+  const startEdit = (cat: Category) => {
+    setEditingId(cat.id);
+    setEditingDescription(cat.description ?? "");
+    setEditingEmoji(cat.emoji ?? "");
+  };
+
+  const saveCategory = async (id: string) => {
+    setSaving(true);
+    const { error } = await supabase
+      .from("categories")
+      .update({
+        description: editingDescription.trim() || null,
+        emoji: editingEmoji.trim() || null,
+      })
+      .eq("id", id);
+
+    if (!error) {
+      setCategories((prev) =>
+        prev.map((c) =>
+          c.id === id
+            ? {
+                ...c,
+                description: editingDescription.trim() || null,
+                emoji: editingEmoji.trim() || null,
+              }
+            : c,
+        ),
+      );
+      setEditingId(null);
+    } else {
+      alert("Failed: " + error.message);
+    }
+    setSaving(false);
   };
 
   const deleteCategory = async (id: string, name: string) => {
@@ -80,21 +129,38 @@ export default function CategoriesPage() {
 
       <main className="flex-1 max-w-lg mx-auto w-full px-4 py-6 space-y-4">
         {/* Add category form */}
-        <form onSubmit={addCategory} className="flex gap-2">
-          <input
-            type="text"
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            placeholder="Naziv nove kategorije..."
-            className="flex-1 bg-[var(--card)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[var(--accent)]"
+        <form onSubmit={addCategory} className="space-y-2">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newEmoji}
+              onChange={(e) => setNewEmoji(e.target.value)}
+              placeholder="😀"
+              maxLength={2}
+              className="w-16 bg-[var(--card)] border border-[var(--border)] rounded-xl px-3 py-3 text-center text-lg focus:outline-none focus:border-[var(--accent)]"
+            />
+            <input
+              type="text"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder="Naziv nove kategorije..."
+              className="flex-1 bg-[var(--card)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[var(--accent)]"
+            />
+            <button
+              type="submit"
+              disabled={adding || !newName.trim()}
+              className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold rounded-xl px-5 py-3 text-sm transition-colors disabled:opacity-50"
+            >
+              Dodaj
+            </button>
+          </div>
+          <textarea
+            value={newDescription}
+            onChange={(e) => setNewDescription(e.target.value)}
+            placeholder="Opis kategorije (opciono, prikazuje se na javnoj stranici)..."
+            rows={2}
+            className="w-full bg-[var(--card)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[var(--accent)] resize-none"
           />
-          <button
-            type="submit"
-            disabled={adding || !newName.trim()}
-            className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold rounded-xl px-5 py-3 text-sm transition-colors disabled:opacity-50"
-          >
-            Dodaj
-          </button>
         </form>
 
         {/* List */}
@@ -107,16 +173,69 @@ export default function CategoriesPage() {
             {categories.map((cat) => (
               <div
                 key={cat.id}
-                className="flex items-center justify-between bg-[var(--card)] border border-[var(--border)] rounded-xl px-4 py-3"
+                className="bg-[var(--card)] border border-[var(--border)] rounded-xl px-4 py-3 space-y-2"
               >
-                <span className="text-sm font-medium">{cat.name}</span>
-                <button
-                  onClick={() => deleteCategory(cat.id, cat.name)}
-                  className="text-[var(--muted)] hover:text-[var(--error)] transition-colors text-sm"
-                  title="Obriši"
-                >
-                  🗑
-                </button>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {cat.emoji && <span>{cat.emoji}</span>}
+                    <span className="text-sm font-medium">{cat.name}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() =>
+                        editingId === cat.id
+                          ? setEditingId(null)
+                          : startEdit(cat)
+                      }
+                      className="text-[var(--muted)] hover:text-[var(--foreground)] transition-colors text-xs"
+                    >
+                      {editingId === cat.id ? "Otkaži" : "Uredi"}
+                    </button>
+                    <button
+                      onClick={() => deleteCategory(cat.id, cat.name)}
+                      className="text-[var(--muted)] hover:text-[var(--error)] transition-colors text-sm"
+                      title="Obriši"
+                    >
+                      🗑
+                    </button>
+                  </div>
+                </div>
+
+                {editingId === cat.id ? (
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={editingEmoji}
+                        onChange={(e) => setEditingEmoji(e.target.value)}
+                        placeholder="😀"
+                        maxLength={2}
+                        className="w-16 bg-[var(--background)] border border-[var(--border)] rounded-lg px-3 py-2 text-center text-lg focus:outline-none focus:border-[var(--accent)]"
+                      />
+                      <textarea
+                        value={editingDescription}
+                        onChange={(e) => setEditingDescription(e.target.value)}
+                        placeholder="Opis kategorije..."
+                        rows={2}
+                        className="flex-1 bg-[var(--background)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--accent)] resize-none"
+                        autoFocus
+                      />
+                    </div>
+                    <button
+                      onClick={() => saveCategory(cat.id)}
+                      disabled={saving}
+                      className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold rounded-lg px-4 py-1.5 transition-colors disabled:opacity-50"
+                    >
+                      Sačuvaj
+                    </button>
+                  </div>
+                ) : (
+                  cat.description && (
+                    <p className="text-xs text-[var(--muted)]">
+                      {cat.description}
+                    </p>
+                  )
+                )}
               </div>
             ))}
             {categories.length === 0 && (
