@@ -30,6 +30,10 @@ function QuizContent() {
   const [questionCount, setQuestionCount] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
   const [streak, setStreak] = useState(0);
+  const [showStreak10, setShowStreak10] = useState(false);
+  const [showStreak30, setShowStreak30] = useState(false);
+  const [bestStreak, setBestStreak] = useState(0);
+  const [showSessionReport, setShowSessionReport] = useState(false);
   const queueRef = useRef<Question[]>([]);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -157,12 +161,66 @@ function QuizContent() {
     setIsCorrect(correct);
     setAnswered(true);
     setQuestionCount((c) => c + 1);
+    if (questionCount + 1 === 30) {
+      setShowStreak30(true);
+      setTimeout(() => setShowStreak30(false), 4000);
+      const end = Date.now() + 4000;
+      const frame = () => {
+        confetti({
+          particleCount: 80,
+          angle: 60,
+          spread: 90,
+          origin: { x: 0, y: 0.5 },
+          colors: ["#a855f7", "#ec4899", "#facc15", "#f97316"],
+        });
+        confetti({
+          particleCount: 80,
+          angle: 120,
+          spread: 90,
+          origin: { x: 1, y: 0.5 },
+          colors: ["#a855f7", "#ec4899", "#facc15", "#f97316"],
+        });
+        confetti({
+          particleCount: 40,
+          angle: 90,
+          spread: 60,
+          origin: { x: 0.5, y: 0.3 },
+          colors: ["#a855f7", "#ec4899", "#facc15"],
+        });
+        if (Date.now() < end) requestAnimationFrame(frame);
+      };
+      frame();
+    }
     if (correct) {
       setCorrectCount((c) => c + 1);
       setStreak((s) => {
         const next = s + 1;
+        setBestStreak((b) => Math.max(b, next));
         if (next === 5) {
           confetti({ particleCount: 120, spread: 80, origin: { y: 0.7 } });
+        }
+        if (next === 10) {
+          setShowStreak10(true);
+          setTimeout(() => setShowStreak10(false), 3000);
+          const end = Date.now() + 2000;
+          const frame = () => {
+            confetti({
+              particleCount: 60,
+              angle: 60,
+              spread: 70,
+              origin: { x: 0, y: 0.6 },
+              colors: ["#f97316", "#facc15", "#fb923c"],
+            });
+            confetti({
+              particleCount: 60,
+              angle: 120,
+              spread: 70,
+              origin: { x: 1, y: 0.6 },
+              colors: ["#f97316", "#facc15", "#fb923c"],
+            });
+            if (Date.now() < end) requestAnimationFrame(frame);
+          };
+          frame();
         }
         return next;
       });
@@ -215,6 +273,63 @@ function QuizContent() {
     showNextFromQueue(true);
   };
 
+  const getSessionMessage = (total: number, accuracy: number) => {
+    if (total === 0)
+      return {
+        emoji: "😴",
+        text: "Niste odgovorili ni na jedno pitanje ovaj put!",
+      };
+    if (total < 5) {
+      if (accuracy === 100)
+        return { emoji: "⚡", text: "Kratak ali savršen start!" };
+      return {
+        emoji: "👣",
+        text: "Tek ste zagrejali motore. Sledeći put duže!",
+      };
+    }
+    if (accuracy >= 90) {
+      if (total >= 30)
+        return {
+          emoji: "🏆",
+          text: "Legendarno! Maraton sa skoro savršenom preciznošću!",
+        };
+      if (total >= 15)
+        return {
+          emoji: "🥇",
+          text: "Izvanredno! Vrhunska preciznost tokom cele sesije!",
+        };
+      return { emoji: "🌟", text: "Odlično! Skoro savršen rezultat!" };
+    }
+    if (accuracy >= 75) {
+      if (total >= 30)
+        return {
+          emoji: "💪",
+          text: "Sjajan maraton! Solidna preciznost kroz celu sesiju.",
+        };
+      return { emoji: "😎", text: "Sjajan rezultat! Nastavite ovim tempom." };
+    }
+    if (accuracy >= 50) {
+      if (total >= 20)
+        return {
+          emoji: "📈",
+          text: "Duga sesija, ima prostora za rast. Vežbajte dalje!",
+        };
+      return {
+        emoji: "🙂",
+        text: "Solidan nastup. Malo više vežbanja i bićete neustavljivi!",
+      };
+    }
+    if (total >= 20)
+      return {
+        emoji: "🔄",
+        text: "Duga sesija - upornošću do pobede! Greške su lekcije.",
+      };
+    return {
+      emoji: "📚",
+      text: "Ima prostora za napredak. Vežbajte greške i pokušajte ponovo!",
+    };
+  };
+
   if (categoryIds.length === 0) {
     return (
       <AppShell>
@@ -233,9 +348,100 @@ function QuizContent() {
 
   return (
     <AppShell>
+      {showStreak10 && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+          <div className="bg-orange-500 text-white rounded-2xl px-8 py-5 text-center shadow-2xl animate-bounce">
+            <div className="text-4xl mb-1">🔥🔥🔥</div>
+            <div className="text-2xl font-bold tracking-wide">10 zaredom!</div>
+            <div className="text-sm mt-1 opacity-90">Nestvarna serija!</div>
+          </div>
+        </div>
+      )}
+      {showSessionReport &&
+        (() => {
+          const total = questionCount + (answered ? 0 : 0);
+          const accuracy =
+            total > 0 ? Math.round((correctCount / total) * 100) : 0;
+          const { emoji, text } = getSessionMessage(total, accuracy);
+          return (
+            <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+              <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl w-full max-w-sm p-6 text-center shadow-2xl">
+                <div className="text-5xl mb-3">{emoji}</div>
+                <h2 className="text-xl font-bold mb-1">Izveštaj sesije</h2>
+                <p className="text-[var(--muted)] text-sm mb-5">{text}</p>
+                <div className="grid grid-cols-3 gap-3 mb-5">
+                  <div className="bg-[var(--bg)] rounded-xl py-3">
+                    <div className="text-2xl font-bold">{total}</div>
+                    <div className="text-xs text-[var(--muted)] mt-1">
+                      Pitanja
+                    </div>
+                  </div>
+                  <div className="bg-[var(--bg)] rounded-xl py-3">
+                    <div className="text-2xl font-bold">{accuracy}%</div>
+                    <div className="text-xs text-[var(--muted)] mt-1">
+                      Tačnost
+                    </div>
+                  </div>
+                  <div className="bg-[var(--bg)] rounded-xl py-3">
+                    <div className="text-2xl font-bold text-orange-400">
+                      {bestStreak}
+                    </div>
+                    <div className="text-xs text-[var(--muted)] mt-1">
+                      Maks. niz
+                    </div>
+                  </div>
+                </div>
+                <div className="text-sm text-[var(--muted)] mb-5">
+                  {correctCount} tačno / {total - correctCount} netačno
+                </div>
+                <div className="space-y-2">
+                  <button
+                    onClick={() => router.push("/lobby")}
+                    className="w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold rounded-xl px-4 py-3 text-sm transition-colors"
+                  >
+                    Nazad na početnu
+                  </button>
+                  <button
+                    onClick={() => setShowSessionReport(false)}
+                    className="w-full bg-[var(--card)] hover:bg-[var(--card-hover)] border border-[var(--border)] text-white font-semibold rounded-xl px-4 py-3 text-sm transition-colors"
+                  >
+                    Nastavi kviz
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+      {showStreak30 && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+          <div className="bg-gradient-to-br from-purple-600 to-pink-500 text-white rounded-2xl px-10 py-6 text-center shadow-2xl animate-bounce">
+            <div className="text-5xl mb-2">👑🔥👑</div>
+            <div className="text-3xl font-bold tracking-wide">30 pitanja!</div>
+            <div className="text-sm mt-2 opacity-90">Pravi kviz maratonac!</div>
+          </div>
+        </div>
+      )}
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-8 w-8 border-2 border-[var(--accent)] border-t-transparent" />
+        <div className="space-y-4">
+          {/* Session counter row skeleton */}
+          <div className="flex items-center justify-between">
+            <div className="skeleton h-3.5 w-20" />
+            <div className="skeleton h-3.5 w-24" />
+          </div>
+          {/* Question card skeleton */}
+          <div className="bg-[var(--card)] rounded-2xl border border-[var(--border)] p-5 space-y-4">
+            <div className="skeleton h-3 w-24" />
+            <div className="space-y-2">
+              <div className="skeleton h-4 w-full" />
+              <div className="skeleton h-4 w-4/5" />
+              <div className="skeleton h-4 w-2/3" />
+            </div>
+            <div className="space-y-2 pt-2">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="skeleton h-12 w-full rounded-xl" />
+              ))}
+            </div>
+          </div>
         </div>
       ) : fetchError ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -295,7 +501,9 @@ function QuizContent() {
             <span>Pitanje #{questionCount + (answered ? 0 : 1)}</span>
             <div className="flex items-center gap-3">
               {streak >= 2 && (
-                <span className="text-orange-400 font-semibold">
+                <span
+                  className={`font-semibold transition-all ${streak >= 10 ? "text-yellow-400 text-base scale-110 inline-block" : "text-orange-400"}`}
+                >
                   🔥 {streak}
                 </span>
               )}
@@ -305,7 +513,7 @@ function QuizContent() {
                 </span>
               )}
               <button
-                onClick={() => router.push("/lobby")}
+                onClick={() => setShowSessionReport(true)}
                 className="text-[var(--error)] hover:text-[var(--error)]/80 font-medium transition-colors"
               >
                 Završi sesiju
@@ -361,8 +569,24 @@ export default function QuizPage() {
     <Suspense
       fallback={
         <AppShell>
-          <div className="flex items-center justify-center py-20">
-            <div className="animate-spin rounded-full h-8 w-8 border-2 border-[var(--accent)] border-t-transparent" />
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="skeleton h-3.5 w-20" />
+              <div className="skeleton h-3.5 w-24" />
+            </div>
+            <div className="bg-[var(--card)] rounded-2xl border border-[var(--border)] p-5 space-y-4">
+              <div className="skeleton h-3 w-24" />
+              <div className="space-y-2">
+                <div className="skeleton h-4 w-full" />
+                <div className="skeleton h-4 w-4/5" />
+                <div className="skeleton h-4 w-2/3" />
+              </div>
+              <div className="space-y-2 pt-2">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="skeleton h-12 w-full rounded-xl" />
+                ))}
+              </div>
+            </div>
           </div>
         </AppShell>
       }

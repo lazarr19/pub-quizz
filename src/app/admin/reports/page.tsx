@@ -118,7 +118,7 @@ export default function AdminReportsPage() {
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div>
                         <span className="text-xs text-[var(--muted)]">
-                          {r.questions?.categories?.name || "—"} · od{" "}
+                          {r.questions?.categories?.name || "-"} · od{" "}
                           {r.profiles?.display_name || "Nepoznato"}
                         </span>
                       </div>
@@ -178,7 +178,7 @@ export default function AdminReportsPage() {
                   >
                     <div className="flex items-start justify-between gap-2 mb-1">
                       <span className="text-xs text-[var(--muted)]">
-                        {r.questions?.categories?.name || "—"} · od{" "}
+                        {r.questions?.categories?.name || "-"} · od{" "}
                         {r.profiles?.display_name || "Nepoznato"}
                       </span>
                       <span className="text-[10px] px-2 py-0.5 rounded-full font-medium text-[var(--success)] bg-[var(--success)]/10">

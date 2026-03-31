@@ -92,8 +92,30 @@ export default function SuggestPage() {
   return (
     <AppShell>
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-8 w-8 border-2 border-[var(--accent)] border-t-transparent" />
+        <div className="space-y-6">
+          {/* Title skeleton */}
+          <div className="skeleton h-7 w-48" />
+
+          {/* Form card skeleton */}
+          <div className="bg-[var(--card)] rounded-2xl border border-[var(--border)] p-5 space-y-4">
+            {/* Category select */}
+            <div className="space-y-1">
+              <div className="skeleton h-3 w-20" />
+              <div className="skeleton h-11 w-full rounded-xl" />
+            </div>
+            {/* Textarea */}
+            <div className="space-y-1">
+              <div className="skeleton h-3 w-14" />
+              <div className="skeleton h-24 w-full rounded-xl" />
+            </div>
+            {/* Input */}
+            <div className="space-y-1">
+              <div className="skeleton h-3 w-24" />
+              <div className="skeleton h-11 w-full rounded-xl" />
+            </div>
+            {/* Submit button */}
+            <div className="skeleton h-11 w-full rounded-xl" />
+          </div>
         </div>
       ) : (
         <div className="space-y-6">
