@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createClient } from "@supabase/supabase-js";
 
 export const revalidate = 3600;
 
@@ -41,7 +41,10 @@ interface Category {
 }
 
 export default async function KategorijeePage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  );
   const { data: categories } = await supabase
     .from("categories")
     .select("id, name, description, emoji")

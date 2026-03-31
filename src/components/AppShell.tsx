@@ -2,7 +2,8 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 
 interface Profile {
   display_name: string;
@@ -12,18 +13,18 @@ interface Profile {
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
     const getUser = async () => {
       const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (session?.user) {
         const { data } = await supabase
           .from("profiles")
           .select("display_name, is_admin")
-          .eq("id", user.id)
+          .eq("id", session.user.id)
           .single();
         if (data) setProfile(data);
       }
@@ -46,10 +47,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             onClick={() => router.push("/lobby")}
             className="flex items-center gap-2 font-bold text-lg"
           >
-            <img
+            <Image
               src="/kzz-logo.png"
               alt="KZZ"
-              className="w-6 h-6 object-contain"
+              width={24}
+              height={24}
+              className="object-contain"
+              priority
             />{" "}
             <span className="hidden sm:inline">KZZ</span>
           </button>
