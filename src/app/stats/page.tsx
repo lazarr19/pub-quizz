@@ -129,6 +129,7 @@ export default function StatsPage() {
             </h3>
 
             {[...stats]
+              .filter((s) => s.answered > 0)
               .sort((a, b) => {
                 const accA = a.answered > 0 ? a.correct / a.answered : 0;
                 const accB = b.answered > 0 ? b.correct / b.answered : 0;

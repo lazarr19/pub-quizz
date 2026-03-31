@@ -161,7 +161,7 @@ function QuizContent() {
     setIsCorrect(correct);
     setAnswered(true);
     setQuestionCount((c) => c + 1);
-    if (questionCount + 1 === 3) {
+    if (questionCount + 1 === 30) {
       setShowStreak30(true);
       setTimeout(() => setShowStreak30(false), 2500);
       confetti({
