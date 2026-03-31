@@ -161,35 +161,23 @@ function QuizContent() {
     setIsCorrect(correct);
     setAnswered(true);
     setQuestionCount((c) => c + 1);
-    if (questionCount + 1 === 30) {
+    if (questionCount + 1 === 3) {
       setShowStreak30(true);
-      setTimeout(() => setShowStreak30(false), 4000);
-      const end = Date.now() + 4000;
-      const frame = () => {
-        confetti({
-          particleCount: 80,
-          angle: 60,
-          spread: 90,
-          origin: { x: 0, y: 0.5 },
-          colors: ["#a855f7", "#ec4899", "#facc15", "#f97316"],
-        });
-        confetti({
-          particleCount: 80,
-          angle: 120,
-          spread: 90,
-          origin: { x: 1, y: 0.5 },
-          colors: ["#a855f7", "#ec4899", "#facc15", "#f97316"],
-        });
-        confetti({
-          particleCount: 40,
-          angle: 90,
-          spread: 60,
-          origin: { x: 0.5, y: 0.3 },
-          colors: ["#a855f7", "#ec4899", "#facc15"],
-        });
-        if (Date.now() < end) requestAnimationFrame(frame);
-      };
-      frame();
+      setTimeout(() => setShowStreak30(false), 2500);
+      confetti({
+        particleCount: 60,
+        angle: 60,
+        spread: 70,
+        origin: { x: 0, y: 0.6 },
+        colors: ["#a855f7", "#ec4899", "#facc15", "#f97316"],
+      });
+      confetti({
+        particleCount: 60,
+        angle: 120,
+        spread: 70,
+        origin: { x: 1, y: 0.6 },
+        colors: ["#a855f7", "#ec4899", "#facc15", "#f97316"],
+      });
     }
     if (correct) {
       setCorrectCount((c) => c + 1);
@@ -201,26 +189,21 @@ function QuizContent() {
         }
         if (next === 10) {
           setShowStreak10(true);
-          setTimeout(() => setShowStreak10(false), 3000);
-          const end = Date.now() + 2000;
-          const frame = () => {
-            confetti({
-              particleCount: 60,
-              angle: 60,
-              spread: 70,
-              origin: { x: 0, y: 0.6 },
-              colors: ["#f97316", "#facc15", "#fb923c"],
-            });
-            confetti({
-              particleCount: 60,
-              angle: 120,
-              spread: 70,
-              origin: { x: 1, y: 0.6 },
-              colors: ["#f97316", "#facc15", "#fb923c"],
-            });
-            if (Date.now() < end) requestAnimationFrame(frame);
-          };
-          frame();
+          setTimeout(() => setShowStreak10(false), 2500);
+          confetti({
+            particleCount: 80,
+            angle: 60,
+            spread: 70,
+            origin: { x: 0, y: 0.6 },
+            colors: ["#f97316", "#facc15", "#fb923c"],
+          });
+          confetti({
+            particleCount: 80,
+            angle: 120,
+            spread: 70,
+            origin: { x: 1, y: 0.6 },
+            colors: ["#f97316", "#facc15", "#fb923c"],
+          });
         }
         return next;
       });
@@ -300,7 +283,7 @@ function QuizContent() {
         };
       return { emoji: "🌟", text: "Odlično! Skoro savršen rezultat!" };
     }
-    if (accuracy >= 75) {
+    if (accuracy >= 70) {
       if (total >= 30)
         return {
           emoji: "💪",
@@ -414,10 +397,10 @@ function QuizContent() {
         })()}
       {showStreak30 && (
         <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
-          <div className="bg-gradient-to-br from-purple-600 to-pink-500 text-white rounded-2xl px-10 py-6 text-center shadow-2xl animate-bounce">
-            <div className="text-5xl mb-2">👑🔥👑</div>
-            <div className="text-3xl font-bold tracking-wide">30 pitanja!</div>
-            <div className="text-sm mt-2 opacity-90">Pravi kviz maratonac!</div>
+          <div className="bg-gradient-to-br from-purple-600 to-pink-500 text-white rounded-2xl px-8 py-4 text-center shadow-xl">
+            <div className="text-4xl mb-1">🏆</div>
+            <div className="text-2xl font-bold tracking-wide">30 pitanja!</div>
+            <div className="text-sm mt-1 opacity-90">Pravi kviz maratonac!</div>
           </div>
         </div>
       )}
