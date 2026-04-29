@@ -44,7 +44,9 @@ function LoginForm() {
         p_email: email,
       });
       if (!allowed) {
-        setError("Registracija nije dozvoljena za ovu email adresu.");
+        setError(
+          "Registracija nije dozvoljena za ovu email adresu. Pošaljite email na radojevic.laza@gmail.com da biste dobili pristup.",
+        );
         setLoading(false);
         return;
       }
