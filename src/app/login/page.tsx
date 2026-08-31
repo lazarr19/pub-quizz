@@ -39,18 +39,6 @@ function LoginForm() {
     setError("");
 
     if (isSignUp) {
-      // Check email whitelist before attempting signup
-      const { data: allowed } = await supabase.rpc("is_email_allowed", {
-        p_email: email,
-      });
-      if (!allowed) {
-        setError(
-          "Registracija nije dozvoljena za ovu email adresu. Pošaljite email na radojevic.laza@gmail.com da biste dobili pristup.",
-        );
-        setLoading(false);
-        return;
-      }
-
       // Validate that the nickname is provided, one word, and unique
       if (!displayName.trim()) {
         setError("Nadimak je obavezan.");
@@ -85,6 +73,11 @@ function LoginForm() {
       if (error) {
         setError(error.message);
       } else {
+        fetch("/api/notify-signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, displayName: displayName.trim() }),
+        }).catch(() => {});
         router.push("/login?confirmed=1");
         return;
       }
