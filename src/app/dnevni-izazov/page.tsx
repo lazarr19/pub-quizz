@@ -36,9 +36,23 @@ interface DailyChallengeData {
   stats: Stats;
 }
 
+function firstUnanswered(data: DailyChallengeData): Question | null {
+  const answeredIds = new Set(data.responses.map((r) => r.question_id));
+  return data.questions.find((q) => !answeredIds.has(q.id)) ?? null;
+}
+
 export default function DailyChallengePage() {
   const [data, setData] = useState<DailyChallengeData | null>(null);
   const [loading, setLoading] = useState(true);
+  // currentQuestion is deliberately its own piece of state, NOT derived from
+  // data.responses on every render - it must only advance when the user
+  // clicks "next", not the instant an answer is recorded. Deriving it
+  // reactively caused the app to jump straight to the next question (already
+  // shown as answered, correct option revealed) the moment handleAnswer
+  // updated data, before the user ever saw or answered it.
+  const [currentQuestion, setCurrentQuestion] = useState<Question | null>(
+    null,
+  );
   const [answered, setAnswered] = useState(false);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isCorrect, setIsCorrect] = useState(false);
@@ -65,18 +79,17 @@ export default function DailyChallengePage() {
     });
 
     if (!error && result) {
-      setData(result as DailyChallengeData);
+      const typed = result as DailyChallengeData;
+      setData(typed);
+      setCurrentQuestion(firstUnanswered(typed));
     }
     setLoading(false);
   };
 
-  const answeredIds = new Set((data?.responses ?? []).map((r) => r.question_id));
-  const unanswered = (data?.questions ?? []).filter((q) => !answeredIds.has(q.id));
-  const currentQuestion = unanswered[0] ?? null;
   const currentPosition = currentQuestion
     ? (data?.questions.findIndex((q) => q.id === currentQuestion.id) ?? 0) + 1
     : 0;
-  const completed = data !== null && unanswered.length === 0;
+  const completed = data !== null && currentQuestion === null;
   const correctCount = (data?.responses ?? []).filter((r) => r.is_correct).length;
 
   const handleAnswer = async (option: number) => {
@@ -100,6 +113,8 @@ export default function DailyChallengePage() {
       is_correct: correct,
     });
 
+    // Record the response (for the score counter and end-of-run review),
+    // but do NOT touch currentQuestion here - that only advances in handleNext.
     setData({
       ...data,
       responses: [
@@ -114,6 +129,13 @@ export default function DailyChallengePage() {
   };
 
   const handleNext = () => {
+    if (!data || !currentQuestion) return;
+    const answeredIds = new Set(
+      data.responses.map((r) => r.question_id),
+    ).add(currentQuestion.id);
+    const next =
+      data.questions.find((q) => !answeredIds.has(q.id)) ?? null;
+    setCurrentQuestion(next);
     setAnswered(false);
     setSelectedOption(null);
   };
