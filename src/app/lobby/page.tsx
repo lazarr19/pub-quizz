@@ -13,8 +13,16 @@ interface CategoryStat {
   correct: number;
 }
 
+interface DailyChallengeStatus {
+  answered: number;
+  correct: number;
+}
+
 export default function LobbyPage() {
   const [stats, setStats] = useState<CategoryStat[]>([]);
+  const [dailyStatus, setDailyStatus] = useState<DailyChallengeStatus | null>(
+    null,
+  );
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [mode, setMode] = useState<"new" | "mistakes">("new");
   const [loading, setLoading] = useState(true);
@@ -33,12 +41,20 @@ export default function LobbyPage() {
     if (!session?.user) return;
     const user = session.user;
 
-    const { data, error } = await supabase.rpc("get_player_stats", {
-      p_user_id: user.id,
-    });
+    const [{ data, error }, { data: daily }] = await Promise.all([
+      supabase.rpc("get_player_stats", { p_user_id: user.id }),
+      supabase.rpc("get_daily_challenge", { p_user_id: user.id }),
+    ]);
 
     if (!error && data) {
       setStats(data);
+    }
+    if (daily) {
+      const responses = daily.responses as { is_correct: boolean }[];
+      setDailyStatus({
+        answered: responses.length,
+        correct: responses.filter((r) => r.is_correct).length,
+      });
     }
     setLoading(false);
   };
@@ -147,6 +163,30 @@ export default function LobbyPage() {
         </div>
       ) : (
         <div className="space-y-6">
+          {/* Daily Challenge Card */}
+          {dailyStatus && (
+            <button
+              onClick={() => router.push("/dnevni-izazov")}
+              className="w-full text-left bg-[var(--card)] rounded-2xl p-5 border border-[var(--accent)]/30 hover:border-[var(--accent)] transition-colors flex items-center justify-between"
+            >
+              <div>
+                <div className="text-sm font-semibold flex items-center gap-2">
+                  📅 Izazov dana
+                </div>
+                <p className="text-xs text-[var(--muted)] mt-1">
+                  {dailyStatus.answered === 10
+                    ? `Završeno - ${dailyStatus.correct}/10 tačno`
+                    : dailyStatus.answered > 0
+                      ? `U toku - ${dailyStatus.answered}/10 odgovoreno`
+                      : "10 novih pitanja, isto za sve - odigrajte danas!"}
+                </p>
+              </div>
+              <span className="text-[var(--accent)] text-sm font-medium shrink-0 ml-3">
+                {dailyStatus.answered === 10 ? "Pregled →" : "Igraj →"}
+              </span>
+            </button>
+          )}
+
           {/* Overall Stats Card */}
           <div className="bg-[var(--card)] rounded-2xl p-5 border border-[var(--border)]">
             <h2 className="text-sm font-medium text-[var(--muted)] mb-3">
