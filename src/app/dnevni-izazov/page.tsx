@@ -20,6 +20,7 @@ interface Question {
 
 interface Response {
   question_id: string;
+  selected_option: number;
   is_correct: boolean;
 }
 
@@ -41,6 +42,7 @@ export default function DailyChallengePage() {
   const [answered, setAnswered] = useState(false);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isCorrect, setIsCorrect] = useState(false);
+  const [showReview, setShowReview] = useState(false);
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
 
@@ -94,6 +96,7 @@ export default function DailyChallengePage() {
       user_id: user.id,
       challenge_date: data.challenge_date,
       question_id: currentQuestion.id,
+      selected_option: option,
       is_correct: correct,
     });
 
@@ -101,7 +104,11 @@ export default function DailyChallengePage() {
       ...data,
       responses: [
         ...data.responses,
-        { question_id: currentQuestion.id, is_correct: correct },
+        {
+          question_id: currentQuestion.id,
+          selected_option: option,
+          is_correct: correct,
+        },
       ],
     });
   };
@@ -134,32 +141,66 @@ export default function DailyChallengePage() {
           </div>
         </div>
       ) : completed ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="text-6xl mb-4">
-            {correctCount >= 8 ? "🏆" : correctCount >= 5 ? "🎉" : "💪"}
-          </div>
-          <h2 className="text-2xl font-bold mb-2">Izazov dana završen!</h2>
-          <p className="text-[var(--muted)] mb-1">
-            Osvojili ste {correctCount}/10 tačnih odgovora.
-          </p>
-          <p className="text-sm text-[var(--accent)] mb-6">
-            🔥 Niz je sačuvan za danas!
-          </p>
-
-          {data && data.stats.completed_count > 0 && (
-            <p className="text-xs text-[var(--muted)] mb-6">
-              {data.stats.completed_count}{" "}
-              {data.stats.completed_count === 1 ? "igrač je" : "igrača je"} danas
-              završilo izazov, prosečan rezultat {data.stats.avg_score}/10.
+        <div className="space-y-6">
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <div className="text-6xl mb-4">
+              {correctCount >= 8 ? "🏆" : correctCount >= 5 ? "🎉" : "💪"}
+            </div>
+            <h2 className="text-2xl font-bold mb-2">Izazov dana završen!</h2>
+            <p className="text-[var(--muted)] mb-1">
+              Osvojili ste {correctCount}/10 tačnih odgovora.
             </p>
-          )}
+            <p className="text-sm text-[var(--accent)] mb-6">
+              🔥 Niz je sačuvan za danas!
+            </p>
 
-          <button
-            onClick={() => router.push("/lobby")}
-            className="w-full max-w-xs bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold rounded-xl px-4 py-3 text-sm transition-colors"
-          >
-            Nazad na početnu
-          </button>
+            {data && data.stats.completed_count > 0 && (
+              <p className="text-xs text-[var(--muted)] mb-6">
+                {data.stats.completed_count}{" "}
+                {data.stats.completed_count === 1 ? "igrač je" : "igrača je"}{" "}
+                danas završilo izazov, prosečan rezultat {data.stats.avg_score}
+                /10.
+              </p>
+            )}
+
+            <div className="space-y-2 w-full max-w-xs">
+              <button
+                onClick={() => setShowReview((v) => !v)}
+                className="w-full bg-[var(--card)] hover:bg-[var(--card-hover)] border border-[var(--border)] text-white font-semibold rounded-xl px-4 py-3 text-sm transition-colors"
+              >
+                {showReview ? "Sakrij pregled" : "Pregledaj pitanja"}
+              </button>
+              <button
+                onClick={() => router.push("/lobby")}
+                className="w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold rounded-xl px-4 py-3 text-sm transition-colors"
+              >
+                Nazad na početnu
+              </button>
+            </div>
+          </div>
+
+          {showReview && data && (
+            <div className="space-y-4">
+              {data.questions.map((q, i) => {
+                const response = data.responses.find(
+                  (r) => r.question_id === q.id,
+                );
+                return (
+                  <div key={q.id} className="space-y-1">
+                    <div className="text-xs text-[var(--muted)]">
+                      Pitanje {i + 1}/10
+                    </div>
+                    <QuestionCard
+                      question={q}
+                      selectedOption={response?.selected_option ?? null}
+                      answered={true}
+                      onAnswer={() => {}}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       ) : currentQuestion ? (
         <div className="space-y-4">

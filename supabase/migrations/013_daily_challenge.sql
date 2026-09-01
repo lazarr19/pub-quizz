@@ -19,6 +19,7 @@ CREATE TABLE daily_challenge_responses (
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   challenge_date DATE NOT NULL REFERENCES daily_challenges(challenge_date) ON DELETE CASCADE,
   question_id UUID NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
+  selected_option SMALLINT NOT NULL CHECK (selected_option BETWEEN 1 AND 3),
   is_correct BOOLEAN NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY (user_id, challenge_date, question_id)
@@ -137,6 +138,7 @@ BEGIN
     'responses', (
       SELECT COALESCE(json_agg(json_build_object(
         'question_id', r.question_id,
+        'selected_option', r.selected_option,
         'is_correct', r.is_correct
       )), '[]'::json)
       FROM daily_challenge_responses r
@@ -334,6 +336,59 @@ BEGIN
   SELECT json_build_object(
     'leaderboard', (SELECT COALESCE(json_agg(row_to_json(t) ORDER BY t.rank), '[]'::json) FROM top10 t),
     'current_user', (SELECT row_to_json(c) FROM current_user_rank c)
+  ) INTO result;
+
+  RETURN result;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- 7. Daily-challenge-only streak (separate from the general practice streak):
+-- consecutive calendar days where the user completed all 10 daily challenge
+-- questions, regardless of score.
+CREATE OR REPLACE FUNCTION get_daily_challenge_streak(p_user_id UUID)
+RETURNS JSON AS $$
+DECLARE
+  result JSON;
+BEGIN
+  IF auth.uid() IS NULL OR p_user_id IS DISTINCT FROM auth.uid() THEN
+    RAISE EXCEPTION 'Unauthorized';
+  END IF;
+
+  WITH completed_days AS (
+    SELECT dcr.challenge_date AS active_date
+    FROM daily_challenge_responses dcr
+    WHERE dcr.user_id = p_user_id
+    GROUP BY dcr.challenge_date
+    HAVING COUNT(*) = 10
+  ),
+  numbered AS (
+    SELECT
+      active_date,
+      active_date - (ROW_NUMBER() OVER (ORDER BY active_date))::int AS grp
+    FROM completed_days
+  ),
+  islands AS (
+    SELECT
+      grp,
+      MAX(active_date) AS island_end,
+      COUNT(*)::int AS island_length
+    FROM numbered
+    GROUP BY grp
+  ),
+  flags AS (
+    SELECT
+      EXISTS (SELECT 1 FROM completed_days WHERE active_date = CURRENT_DATE) AS completed_today
+  )
+  SELECT json_build_object(
+    'streak', COALESCE((
+      SELECT i.island_length
+      FROM islands i, flags f
+      WHERE i.island_end = CURRENT_DATE
+         OR (i.island_end = CURRENT_DATE - 1 AND NOT f.completed_today)
+      ORDER BY i.island_length DESC
+      LIMIT 1
+    ), 0),
+    'completed_today', (SELECT completed_today FROM flags)
   ) INTO result;
 
   RETURN result;

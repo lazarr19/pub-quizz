@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 
 interface Profile {
@@ -10,10 +10,30 @@ interface Profile {
   is_admin: boolean;
 }
 
+const NAV_ITEMS = [
+  { href: "/dnevni-izazov", icon: "📅", label: "Izazov dana" },
+  { href: "/leaderboard", icon: "🏆", label: "Rang lista" },
+  { href: "/stats", icon: "📊", label: "Statistika" },
+  { href: "/suggest", icon: "❓", label: "Predloži pitanje" },
+];
+
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [menuOpen]);
 
   useEffect(() => {
     const getUser = async () => {
@@ -58,31 +78,17 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <span className="hidden sm:inline">KZZ</span>
           </button>
 
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => router.push("/dnevni-izazov")}
-              className="text-xs bg-[var(--card)] border border-[var(--border)] px-3 py-1.5 rounded-lg hover:bg-[var(--card-hover)] transition-colors"
-            >
-              📅
-            </button>
-            <button
-              onClick={() => router.push("/leaderboard")}
-              className="text-xs bg-[var(--card)] border border-[var(--border)] px-3 py-1.5 rounded-lg hover:bg-[var(--card-hover)] transition-colors"
-            >
-              🏆
-            </button>
-            <button
-              onClick={() => router.push("/stats")}
-              className="text-xs bg-[var(--card)] border border-[var(--border)] px-3 py-1.5 rounded-lg hover:bg-[var(--card-hover)] transition-colors"
-            >
-              📊
-            </button>
-            <button
-              onClick={() => router.push("/suggest")}
-              className="text-xs bg-[var(--card)] border border-[var(--border)] px-3 py-1.5 rounded-lg hover:bg-[var(--card-hover)] transition-colors"
-            >
-              ❓
-            </button>
+          {/* Desktop/tablet: inline icon row */}
+          <div className="hidden sm:flex items-center gap-3">
+            {NAV_ITEMS.map((item) => (
+              <button
+                key={item.href}
+                onClick={() => router.push(item.href)}
+                className="text-xs bg-[var(--card)] border border-[var(--border)] px-3 py-1.5 rounded-lg hover:bg-[var(--card-hover)] transition-colors"
+              >
+                {item.icon}
+              </button>
+            ))}
             {profile?.is_admin && (
               <button
                 onClick={() => router.push("/admin")}
@@ -91,7 +97,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 Admin
               </button>
             )}
-            <span className="text-sm text-[var(--muted)] hidden sm:inline">
+            <span className="text-sm text-[var(--muted)]">
               {profile?.display_name}
             </span>
             <button
@@ -100,6 +106,59 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             >
               Odjavi se
             </button>
+          </div>
+
+          {/* Mobile: collapsible hamburger menu */}
+          <div className="sm:hidden relative" ref={menuRef}>
+            <button
+              onClick={() => setMenuOpen((v) => !v)}
+              className="text-sm bg-[var(--card)] border border-[var(--border)] px-3 py-1.5 rounded-lg hover:bg-[var(--card-hover)] transition-colors"
+              aria-label="Meni"
+            >
+              ☰
+            </button>
+
+            {menuOpen && (
+              <div className="absolute right-0 top-full mt-2 w-56 bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-xl overflow-hidden z-50">
+                  {profile?.display_name && (
+                    <div className="px-4 py-3 text-sm font-medium border-b border-[var(--border)]">
+                      {profile.display_name}
+                    </div>
+                  )}
+                  {NAV_ITEMS.map((item) => (
+                    <button
+                      key={item.href}
+                      onClick={() => {
+                        setMenuOpen(false);
+                        router.push(item.href);
+                      }}
+                      className="w-full text-left px-4 py-3 text-sm hover:bg-[var(--card-hover)] transition-colors flex items-center gap-2"
+                    >
+                      <span>{item.icon}</span> {item.label}
+                    </button>
+                  ))}
+                  {profile?.is_admin && (
+                    <button
+                      onClick={() => {
+                        setMenuOpen(false);
+                        router.push("/admin");
+                      }}
+                      className="w-full text-left px-4 py-3 text-sm text-[var(--accent)] font-medium hover:bg-[var(--card-hover)] transition-colors"
+                    >
+                      Admin
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false);
+                      handleLogout();
+                    }}
+                    className="w-full text-left px-4 py-3 text-sm text-[var(--muted)] hover:bg-[var(--card-hover)] hover:text-[var(--foreground)] transition-colors border-t border-[var(--border)]"
+                  >
+                    Odjavi se
+                  </button>
+              </div>
+            )}
           </div>
         </div>
       </header>

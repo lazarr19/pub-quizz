@@ -16,6 +16,7 @@ interface CategoryStat {
 interface DailyChallengeStatus {
   answered: number;
   correct: number;
+  streak: number;
 }
 
 export default function LobbyPage() {
@@ -41,10 +42,12 @@ export default function LobbyPage() {
     if (!session?.user) return;
     const user = session.user;
 
-    const [{ data, error }, { data: daily }] = await Promise.all([
-      supabase.rpc("get_player_stats", { p_user_id: user.id }),
-      supabase.rpc("get_daily_challenge", { p_user_id: user.id }),
-    ]);
+    const [{ data, error }, { data: daily }, { data: dailyStreak }] =
+      await Promise.all([
+        supabase.rpc("get_player_stats", { p_user_id: user.id }),
+        supabase.rpc("get_daily_challenge", { p_user_id: user.id }),
+        supabase.rpc("get_daily_challenge_streak", { p_user_id: user.id }),
+      ]);
 
     if (!error && data) {
       setStats(data);
@@ -54,6 +57,7 @@ export default function LobbyPage() {
       setDailyStatus({
         answered: responses.length,
         correct: responses.filter((r) => r.is_correct).length,
+        streak: dailyStreak?.streak ?? 0,
       });
     }
     setLoading(false);
@@ -172,6 +176,12 @@ export default function LobbyPage() {
               <div>
                 <div className="text-sm font-semibold flex items-center gap-2">
                   📅 Izazov dana
+                  {dailyStatus.streak > 0 && (
+                    <span className="text-xs font-medium text-orange-400">
+                      🔥 {dailyStatus.streak}{" "}
+                      {dailyStatus.streak === 1 ? "dan" : "dana"}
+                    </span>
+                  )}
                 </div>
                 <p className="text-xs text-[var(--muted)] mt-1">
                   {dailyStatus.answered === 10
