@@ -36,6 +36,7 @@ export async function updateSession(request: NextRequest) {
   const isKategorijeePage = request.nextUrl.pathname.startsWith("/kategorije");
   const isAdminPage = request.nextUrl.pathname.startsWith("/admin");
   const isApiRoute = request.nextUrl.pathname.startsWith("/api/");
+  const isResetPasswordPage = request.nextUrl.pathname === "/reset-password";
 
   if (
     !user &&
@@ -43,7 +44,8 @@ export async function updateSession(request: NextRequest) {
     !isLandingPage &&
     !isDemoPage &&
     !isKategorijeePage &&
-    !isApiRoute
+    !isApiRoute &&
+    !isResetPasswordPage
   ) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";

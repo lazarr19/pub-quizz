@@ -18,6 +18,8 @@ function LoginForm() {
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
+  const [forgotPassword, setForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -32,6 +34,26 @@ function LoginForm() {
       );
     }
   }, [searchParams]);
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    setSuccess("");
+
+    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password`,
+    });
+
+    if (error) {
+      setError(error.message);
+    } else {
+      setSuccess(
+        "Ako nalog sa ovim emailom postoji, poslat je link za resetovanje lozinke.",
+      );
+    }
+    setLoading(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,11 +154,15 @@ function LoginForm() {
 
         {/* Form Card */}
         <form
-          onSubmit={handleSubmit}
+          onSubmit={forgotPassword ? handleForgotPassword : handleSubmit}
           className="bg-[var(--card)] rounded-2xl p-6 space-y-4 border border-[var(--border)]"
         >
           <h2 className="text-lg font-semibold text-center">
-            {isSignUp ? "Napravi nalog" : "Dobrodošli nazad"}
+            {forgotPassword
+              ? "Resetujte lozinku"
+              : isSignUp
+                ? "Napravi nalog"
+                : "Dobrodošli nazad"}
           </h2>
 
           {success && (
@@ -151,67 +177,101 @@ function LoginForm() {
             </div>
           )}
 
-          {isSignUp && (
-            <>
-              <div>
-                <label className="block text-sm text-[var(--muted)] mb-1">
-                  Nadimak
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
-                  placeholder="Vaš jedinstveni nadimak"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-[var(--muted)] mb-1">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
-                  placeholder="you@example.com"
-                />
-              </div>
-            </>
-          )}
-
-          {!isSignUp && (
+          {forgotPassword ? (
             <div>
               <label className="block text-sm text-[var(--muted)] mb-1">
-                Email ili nadimak
+                Email
               </label>
               <input
-                type="text"
+                type="email"
                 required
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
                 className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
-                placeholder="you@example.com ili nadimak"
+                placeholder="you@example.com"
               />
             </div>
-          )}
+          ) : (
+            <>
+              {isSignUp && (
+                <>
+                  <div>
+                    <label className="block text-sm text-[var(--muted)] mb-1">
+                      Nadimak
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
+                      className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
+                      placeholder="Vaš jedinstveni nadimak"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-[var(--muted)] mb-1">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
+                      placeholder="you@example.com"
+                    />
+                  </div>
+                </>
+              )}
 
-          <div>
-            <label className="block text-sm text-[var(--muted)] mb-1">
-              Lozinka
-            </label>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
-              placeholder="••••••••"
-              minLength={6}
-            />
-          </div>
+              {!isSignUp && (
+                <div>
+                  <label className="block text-sm text-[var(--muted)] mb-1">
+                    Email ili nadimak
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
+                    className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
+                    placeholder="you@example.com ili nadimak"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm text-[var(--muted)] mb-1">
+                  Lozinka
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
+                  placeholder="••••••••"
+                  minLength={6}
+                />
+              </div>
+
+              {!isSignUp && (
+                <div className="text-right -mt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setForgotPassword(true);
+                      setError("");
+                      setSuccess("");
+                    }}
+                    className="text-xs text-[var(--muted)] hover:text-[var(--accent)] transition-colors"
+                  >
+                    Zaboravili ste lozinku?
+                  </button>
+                </div>
+              )}
+            </>
+          )}
 
           <button
             type="submit"
@@ -220,24 +280,42 @@ function LoginForm() {
           >
             {loading
               ? "Učitavanje..."
-              : isSignUp
-                ? "Napravi nalog"
-                : "Prijavi se"}
+              : forgotPassword
+                ? "Pošalji link za reset"
+                : isSignUp
+                  ? "Napravi nalog"
+                  : "Prijavi se"}
           </button>
 
           <p className="text-center text-sm text-[var(--muted)]">
-            {isSignUp ? "Već imate nalog?" : "Nemate nalog?"}{" "}
-            <button
-              type="button"
-              onClick={() => {
-                setIsSignUp(!isSignUp);
-                setError("");
-                setSuccess("");
-              }}
-              className="text-[var(--accent)] hover:underline"
-            >
-              {isSignUp ? "Prijavi se" : "Registruj se"}
-            </button>
+            {forgotPassword ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setForgotPassword(false);
+                  setError("");
+                  setSuccess("");
+                }}
+                className="text-[var(--accent)] hover:underline"
+              >
+                ← Nazad na prijavu
+              </button>
+            ) : (
+              <>
+                {isSignUp ? "Već imate nalog?" : "Nemate nalog?"}{" "}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsSignUp(!isSignUp);
+                    setError("");
+                    setSuccess("");
+                  }}
+                  className="text-[var(--accent)] hover:underline"
+                >
+                  {isSignUp ? "Prijavi se" : "Registruj se"}
+                </button>
+              </>
+            )}
           </p>
         </form>
 
