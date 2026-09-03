@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import PwaInstall from "@/components/PwaInstall";
 import "./globals.css";
 
 const geistSans = localFont({
@@ -53,10 +54,25 @@ export const metadata: Metadata = {
     images: ["/hero.png"],
   },
   icons: {
-    icon: "/kzz-logo.ico",
-    apple: "/kzz-logo.png",
+    icon: [
+      { url: "/kzz-logo.ico", sizes: "any" },
+      { url: "/icons/favicon-16.png", sizes: "16x16", type: "image/png" },
+      { url: "/icons/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: [
+      { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
   },
   manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "KZZ",
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
 
 export const viewport: Viewport = {
@@ -75,6 +91,7 @@ export default function RootLayout({
     <html lang="sr">
       <body className={`${geistSans.variable} antialiased`}>
         {children}
+        <PwaInstall />
         <Analytics />
         <SpeedInsights />
       </body>
