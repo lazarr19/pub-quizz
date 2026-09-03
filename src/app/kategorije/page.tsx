@@ -26,6 +26,14 @@ export const metadata: Metadata = {
       "Sve kategorije kviz pitanja na jednom mestu. Vežbajte istoriju, geografiju, nauku, muziku i još mnogo toga.",
     type: "website",
     locale: "sr_RS",
+    images: [
+      {
+        url: "/hero.png",
+        width: 1200,
+        height: 630,
+        alt: "Ko Zna Zna - platforma za kvizove iz opšteg znanja",
+      },
+    ],
   },
   robots: {
     index: true,

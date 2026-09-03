@@ -1,16 +1,13 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Demo kviz",
-  description:
-    "Probaj besplatni demo kviz na Ko Zna Zna platformi. Testiraj znanje iz opšte kulture bez registracije.",
   robots: {
     index: false,
     follow: false,
   },
 };
 
-export default function DemoLayout({
+export default function LobbyLayout({
   children,
 }: {
   children: React.ReactNode;
