@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
+import NotificationToggle from "./NotificationToggle";
 
 interface Profile {
   display_name: string;
@@ -97,6 +98,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 Admin
               </button>
             )}
+            <NotificationToggle variant="icon" />
             <span className="text-sm text-[var(--muted)]">
               {profile?.display_name}
             </span>
@@ -148,6 +150,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                       Admin
                     </button>
                   )}
+                  <NotificationToggle variant="row" />
                   <button
                     onClick={() => {
                       setMenuOpen(false);
