@@ -47,6 +47,7 @@ function LoginForm() {
       setSuccess(
         "Nalog je napravljen! Proverite email za potvrdu, pa se prijavite.",
       );
+      setIsSignUp(false);
     }
   }, [searchParams]);
 
@@ -115,6 +116,11 @@ function LoginForm() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, displayName: displayName.trim() }),
         }).catch(() => {});
+        // Navigating to /login?confirmed=1 doesn't remount this component
+        // (same route, only the query string changes) - reset local state
+        // ourselves instead of relying on navigation to do it.
+        setPassword("");
+        setLoading(false);
         router.push("/login?confirmed=1");
         return;
       }
