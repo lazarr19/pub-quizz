@@ -44,7 +44,12 @@ function QuizContent() {
   const categoryIds = searchParams.get("categories")?.split(",") || [];
   const isPractice = searchParams.get("mode") === "mistakes";
   const seenIdsRef = useRef<Set<string>>(new Set());
-  const prefetchingRef = useRef(false);
+  // Holds the in-flight prefetch promise (not just a boolean) so a caller
+  // that finds the queue empty can await the SAME request instead of firing
+  // a second, concurrent fetchBatch - two concurrent calls would both read
+  // seenIdsRef before either had updated it, so the DB could legitimately
+  // hand back an overlapping/duplicate question between the two batches.
+  const prefetchPromiseRef = useRef<Promise<void> | null>(null);
   const fetchingRef = useRef(false);
 
   const fetchBatch = useCallback(async (): Promise<Question[]> => {
@@ -79,28 +84,30 @@ function QuizContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const prefetchIfNeeded = useCallback(async () => {
+  const prefetchIfNeeded = useCallback(() => {
     if (
       queueRef.current.length <= PREFETCH_THRESHOLD &&
-      !prefetchingRef.current &&
+      !prefetchPromiseRef.current &&
       !fetchingRef.current
     ) {
-      prefetchingRef.current = true;
-      try {
-        const batch = await fetchBatch();
-        if (batch.length > 0) {
-          // Dedupe against anything added while we were fetching
-          const newQuestions = batch.filter(
-            (q) => !queueRef.current.some((existing) => existing.id === q.id),
-          );
-          queueRef.current.push(...newQuestions);
+      prefetchPromiseRef.current = (async () => {
+        try {
+          const batch = await fetchBatch();
+          if (batch.length > 0) {
+            // Dedupe against anything added while we were fetching
+            const newQuestions = batch.filter(
+              (q) => !queueRef.current.some((existing) => existing.id === q.id),
+            );
+            queueRef.current.push(...newQuestions);
+          }
+        } catch (error) {
+          console.error("Error prefetching questions:", error);
+        } finally {
+          prefetchPromiseRef.current = null;
         }
-      } catch (error) {
-        console.error("Error prefetching questions:", error);
-      } finally {
-        prefetchingRef.current = false;
-      }
+      })();
     }
+    return prefetchPromiseRef.current;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchBatch]);
 
@@ -114,18 +121,25 @@ function QuizContent() {
         setSelectedOption(null);
         setFetchError(false);
 
-        if (queueRef.current.length === 0 || forceRefetch) {
+        if (forceRefetch) {
           setLoading(true);
-          const batch = await fetchBatch();
-          if (batch.length === 0) {
-            setQuestion(null);
-            setAllComplete(true);
-            setLoading(false);
-            return;
+          queueRef.current = await fetchBatch();
+        } else if (queueRef.current.length === 0) {
+          setLoading(true);
+          // A prefetch may already be in flight for exactly this situation -
+          // await it instead of firing a second, racing fetchBatch call.
+          if (prefetchPromiseRef.current) {
+            await prefetchPromiseRef.current;
+          } else {
+            queueRef.current = await fetchBatch();
           }
-          queueRef.current = forceRefetch
-            ? batch
-            : [...queueRef.current, ...batch];
+        }
+
+        if (queueRef.current.length === 0) {
+          setQuestion(null);
+          setAllComplete(true);
+          setLoading(false);
+          return;
         }
 
         const next = queueRef.current.shift()!;
