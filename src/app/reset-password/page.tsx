@@ -1,49 +1,41 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function ResetPasswordPage() {
-  const [status, setStatus] = useState<"checking" | "ready" | "invalid">(
-    "checking",
+  return (
+    <Suspense fallback={null}>
+      <ResetPasswordForm />
+    </Suspense>
   );
+}
+
+function ResetPasswordForm() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
 
-  useEffect(() => {
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY") {
-        setStatus("ready");
-      }
-    });
+  const tokenHash = searchParams.get("token_hash");
+  const missingToken = !tokenHash;
 
-    // In case the recovery session was already established before this
-    // listener attached, check for it directly as a fallback.
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) setStatus("ready");
-    });
-
-    const timeout = setTimeout(() => {
-      setStatus((s) => (s === "checking" ? "invalid" : s));
-    }, 4000);
-
-    return () => {
-      subscription.unsubscribe();
-      clearTimeout(timeout);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
+  // Deliberately don't verify the token on page load - Supabase's default
+  // reset link consumes its one-time token the instant anything visits it,
+  // including email clients' automated link-scanners, which burns it before
+  // the user ever clicks. Instead the token just sits inert in the URL until
+  // the user submits an actual new password - only real, deliberate
+  // interaction consumes it, combining verification and the password update
+  // into one request.
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    if (!tokenHash) return;
 
     if (password !== confirmPassword) {
       setError("Lozinke se ne poklapaju.");
@@ -51,11 +43,27 @@ export default function ResetPasswordPage() {
     }
 
     setLoading(true);
-    const { error } = await supabase.auth.updateUser({ password });
+
+    const { error: verifyError } = await supabase.auth.verifyOtp({
+      token_hash: tokenHash,
+      type: "recovery",
+    });
+
+    if (verifyError) {
+      setError(
+        "Link nije važeći ili je istekao. Zatražite novi link za resetovanje lozinke.",
+      );
+      setLoading(false);
+      return;
+    }
+
+    const { error: updateError } = await supabase.auth.updateUser({
+      password,
+    });
     setLoading(false);
 
-    if (error) {
-      setError(error.message);
+    if (updateError) {
+      setError(updateError.message);
     } else {
       router.push("/lobby");
       router.refresh();
@@ -75,21 +83,12 @@ export default function ResetPasswordPage() {
         </div>
 
         <div className="bg-[var(--card)] rounded-2xl p-6 space-y-4 border border-[var(--border)]">
-          <h2 className="text-lg font-semibold text-center">
-            Nova lozinka
-          </h2>
+          <h2 className="text-lg font-semibold text-center">Nova lozinka</h2>
 
-          {status === "checking" && (
-            <p className="text-center text-sm text-[var(--muted)]">
-              Proveravamo link...
-            </p>
-          )}
-
-          {status === "invalid" && (
+          {missingToken ? (
             <div className="space-y-3">
               <div className="bg-[var(--error)]/10 border border-[var(--error)]/30 text-[var(--error)] text-sm rounded-lg p-3 text-center">
-                Link nije važeći ili je istekao. Zatražite novi link za
-                resetovanje lozinke.
+                Link nije važeći. Zatražite novi link za resetovanje lozinke.
               </div>
               <button
                 onClick={() => router.push("/login")}
@@ -98,9 +97,7 @@ export default function ResetPasswordPage() {
                 Nazad na prijavu
               </button>
             </div>
-          )}
-
-          {status === "ready" && (
+          ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
                 <div className="bg-[var(--error)]/10 border border-[var(--error)]/30 text-[var(--error)] text-sm rounded-lg p-3">
