@@ -38,6 +38,8 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [unconfirmedEmail, setUnconfirmedEmail] = useState("");
+  const [resending, setResending] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createClient();
@@ -75,6 +77,7 @@ function LoginForm() {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setUnconfirmedEmail("");
 
     if (isSignUp) {
       // Validate that the nickname is provided, one word, and unique
@@ -148,6 +151,9 @@ function LoginForm() {
       });
       if (error) {
         setError(translateAuthError(error.message));
+        if (error.message === "Email not confirmed") {
+          setUnconfirmedEmail(loginEmail);
+        }
       } else {
         router.push("/lobby");
         router.refresh();
@@ -155,6 +161,23 @@ function LoginForm() {
     }
 
     setLoading(false);
+  };
+
+  const handleResendConfirmation = async () => {
+    if (!unconfirmedEmail) return;
+    setResending(true);
+    setError("");
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: unconfirmedEmail,
+    });
+    if (error) {
+      setError(translateAuthError(error.message));
+    } else {
+      setSuccess("Link za potvrdu je ponovo poslat! Proverite email.");
+      setUnconfirmedEmail("");
+    }
+    setResending(false);
   };
 
   return (
@@ -193,8 +216,18 @@ function LoginForm() {
           )}
 
           {error && (
-            <div className="bg-[var(--error)]/10 border border-[var(--error)]/30 text-[var(--error)] text-sm rounded-lg p-3">
-              {error}
+            <div className="bg-[var(--error)]/10 border border-[var(--error)]/30 text-[var(--error)] text-sm rounded-lg p-3 space-y-2">
+              <p>{error}</p>
+              {unconfirmedEmail && (
+                <button
+                  type="button"
+                  onClick={handleResendConfirmation}
+                  disabled={resending}
+                  className="text-xs font-semibold underline hover:no-underline disabled:opacity-50"
+                >
+                  {resending ? "Šaljem..." : "Pošalji link ponovo"}
+                </button>
+              )}
             </div>
           )}
 
