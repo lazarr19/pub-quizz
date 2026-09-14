@@ -70,7 +70,8 @@ export default function NotificationPrompt() {
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium">Ne propusti izazov dana</p>
         <p className="text-xs text-[var(--muted)] mt-1">
-          Uključi obaveštenja da te podsetimo kad je izazov spreman i kad je tvoj streak u opasnosti.
+          Uključi obaveštenja da te podsetimo kad je izazov spreman i kad je
+          tvoj streak u opasnosti.
         </p>
       </div>
       <div className="flex flex-col gap-1 items-end shrink-0">

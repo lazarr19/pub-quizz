@@ -3,7 +3,6 @@ import localFont from "next/font/local";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import PwaInstall from "@/components/PwaInstall";
-import NotificationPrompt from "@/components/NotificationPrompt";
 import "./globals.css";
 
 const geistSans = localFont({
@@ -62,7 +61,11 @@ export const metadata: Metadata = {
       { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
     ],
     apple: [
-      { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+      {
+        url: "/icons/apple-touch-icon.png",
+        sizes: "180x180",
+        type: "image/png",
+      },
     ],
   },
   manifest: "/manifest.json",
@@ -93,7 +96,6 @@ export default function RootLayout({
       <body className={`${geistSans.variable} antialiased`}>
         {children}
         <PwaInstall />
-        <NotificationPrompt />
         <Analytics />
         <SpeedInsights />
       </body>

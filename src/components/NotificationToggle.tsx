@@ -53,7 +53,9 @@ export default function NotificationToggle({
       : "🔔 Uključi obaveštenja";
   const title = blocked
     ? "Dozvoli obaveštenja u podešavanjima pregledača"
-    : undefined;
+    : enabled
+      ? "Obaveštenja uključena - klikni da isključiš"
+      : "Uključi obaveštenja";
 
   if (variant === "row") {
     return (
@@ -68,14 +70,19 @@ export default function NotificationToggle({
     );
   }
 
+  // "icon" variant: desktop nav is a single narrow row of icon-only buttons -
+  // the full text label doesn't fit and wraps the whole row. Keep it to the
+  // bell glyph, same as its sibling nav buttons, with the description as a
+  // hover title and aria-label for accessibility.
   return (
     <button
       onClick={toggle}
       disabled={loading || blocked}
       title={title}
+      aria-label={title}
       className="text-xs bg-[var(--card)] border border-[var(--border)] px-3 py-1.5 rounded-lg hover:bg-[var(--card-hover)] transition-colors disabled:opacity-50"
     >
-      {label}
+      {blocked ? "🔕" : "🔔"}
     </button>
   );
 }

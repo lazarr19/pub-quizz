@@ -12,6 +12,21 @@ export default function LoginPage() {
   );
 }
 
+// Supabase Auth returns error messages in English - translate the ones users
+// actually hit; fall back to a generic message rather than leaking raw
+// English text for anything unrecognized.
+function translateAuthError(message: string): string {
+  const known: Record<string, string> = {
+    "Invalid login credentials": "Pogrešan email/nadimak ili lozinka.",
+    "Email not confirmed":
+      "Nalog nije potvrđen. Proverite email za link za potvrdu.",
+    "User already registered": "Nalog sa ovim emailom već postoji.",
+    "Password should be at least 6 characters":
+      "Lozinka mora imati bar 6 karaktera.",
+  };
+  return known[message] ?? "Došlo je do greške. Pokušajte ponovo.";
+}
+
 function LoginForm() {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
@@ -46,7 +61,7 @@ function LoginForm() {
     });
 
     if (error) {
-      setError(error.message);
+      setError(translateAuthError(error.message));
     } else {
       setSuccess(
         "Ako nalog sa ovim emailom postoji, poslat je link za resetovanje lozinke.",
@@ -93,7 +108,7 @@ function LoginForm() {
         },
       });
       if (error) {
-        setError(error.message);
+        setError(translateAuthError(error.message));
       } else {
         fetch("/api/notify-signup", {
           method: "POST",
@@ -126,7 +141,7 @@ function LoginForm() {
         password,
       });
       if (error) {
-        setError(error.message);
+        setError(translateAuthError(error.message));
       } else {
         router.push("/lobby");
         router.refresh();

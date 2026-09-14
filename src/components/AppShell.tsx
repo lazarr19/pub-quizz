@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import NotificationToggle from "./NotificationToggle";
+import NotificationPrompt from "./NotificationPrompt";
 
 interface Profile {
   display_name: string;
@@ -122,44 +123,44 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
             {menuOpen && (
               <div className="absolute right-0 top-full mt-2 w-56 bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-xl overflow-hidden z-50">
-                  {profile?.display_name && (
-                    <div className="px-4 py-3 text-sm font-medium border-b border-[var(--border)]">
-                      {profile.display_name}
-                    </div>
-                  )}
-                  {NAV_ITEMS.map((item) => (
-                    <button
-                      key={item.href}
-                      onClick={() => {
-                        setMenuOpen(false);
-                        router.push(item.href);
-                      }}
-                      className="w-full text-left px-4 py-3 text-sm hover:bg-[var(--card-hover)] transition-colors flex items-center gap-2"
-                    >
-                      <span>{item.icon}</span> {item.label}
-                    </button>
-                  ))}
-                  {profile?.is_admin && (
-                    <button
-                      onClick={() => {
-                        setMenuOpen(false);
-                        router.push("/admin");
-                      }}
-                      className="w-full text-left px-4 py-3 text-sm text-[var(--accent)] font-medium hover:bg-[var(--card-hover)] transition-colors"
-                    >
-                      Admin
-                    </button>
-                  )}
-                  <NotificationToggle variant="row" />
+                {profile?.display_name && (
+                  <div className="px-4 py-3 text-sm font-medium border-b border-[var(--border)]">
+                    {profile.display_name}
+                  </div>
+                )}
+                {NAV_ITEMS.map((item) => (
+                  <button
+                    key={item.href}
+                    onClick={() => {
+                      setMenuOpen(false);
+                      router.push(item.href);
+                    }}
+                    className="w-full text-left px-4 py-3 text-sm hover:bg-[var(--card-hover)] transition-colors flex items-center gap-2"
+                  >
+                    <span>{item.icon}</span> {item.label}
+                  </button>
+                ))}
+                {profile?.is_admin && (
                   <button
                     onClick={() => {
                       setMenuOpen(false);
-                      handleLogout();
+                      router.push("/admin");
                     }}
-                    className="w-full text-left px-4 py-3 text-sm text-[var(--muted)] hover:bg-[var(--card-hover)] hover:text-[var(--foreground)] transition-colors border-t border-[var(--border)]"
+                    className="w-full text-left px-4 py-3 text-sm text-[var(--accent)] font-medium hover:bg-[var(--card-hover)] transition-colors"
                   >
-                    Odjavi se
+                    Admin
                   </button>
+                )}
+                <NotificationToggle variant="row" />
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    handleLogout();
+                  }}
+                  className="w-full text-left px-4 py-3 text-sm text-[var(--muted)] hover:bg-[var(--card-hover)] hover:text-[var(--foreground)] transition-colors border-t border-[var(--border)]"
+                >
+                  Odjavi se
+                </button>
               </div>
             )}
           </div>
@@ -170,6 +171,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <main className="flex-1 max-w-lg mx-auto w-full px-4 py-6">
         {children}
       </main>
+
+      <NotificationPrompt />
     </div>
   );
 }
