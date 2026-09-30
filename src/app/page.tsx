@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { createClient } from "@supabase/supabase-js";
 import { RevealSection, RevealChildren } from "./landing-animations";
+
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "Ko Zna Zna (KZZ) - Priprema za kvizove i testove opšteg znanja",
@@ -24,6 +27,13 @@ export const metadata: Metadata = {
     "opšte obrazovanje",
     "kviz pitanja",
     "test opšte kulture",
+    "kviz znanja",
+    "kviz opšte kulture",
+    "pub kviz pitanja",
+    "pitanja i odgovori",
+    "slagalica pitanja",
+    "potera pitanja",
+    "trivia",
   ],
   openGraph: {
     title: "Ko Zna Zna - Tvoja priprema za kvizove",
@@ -52,13 +62,13 @@ const features = [
     icon: "📺",
     title: "Slagalica, Potera & TV kvizovi",
     description:
-      "Pitanja iz kategorija koje se pojavljuju u najpopularnijim kviz emisijama u Srbiji. Vežbaj kao da si u studiju!",
+      "Vežbaj slagalica pitanja i potera pitanja iz kategorija koje se pojavljuju u najpopularnijim kviz emisijama u Srbiji. Vežbaj kao da si u studiju!",
   },
   {
     icon: "🍺",
     title: "Pub kvizovi",
     description:
-      "Spremi se za kviz veče u omiljenom kafiću. Širok spektar tema - od istorije do pop kulture.",
+      "Prava pub kviz pitanja za kviz veče u omiljenom kafiću. Širok spektar tema - od istorije do pop kulture.",
   },
   {
     icon: "🎓",
@@ -86,12 +96,6 @@ const features = [
   },
 ];
 
-const stats = [
-  { value: "1000+", label: "Pitanja" },
-  { value: "10+", label: "Kategorija" },
-  { value: "∞", label: "Pokušaja" },
-];
-
 const faqs = [
   {
     q: "Da li je Ko Zna Zna besplatno?",
@@ -117,6 +121,14 @@ const faqs = [
     q: "Da li mogu da predložim pitanje?",
     a: "Da! Svaki korisnik može predložiti nova pitanja koja admin pregleda i odobrava za bazu.",
   },
+  {
+    q: "Koliko kviz pitanja ima Ko Zna Zna?",
+    a: "{TOTAL_QUESTIONS_SENTENCE}",
+  },
+  {
+    q: "Odakle dolaze kviz pitanja na platformi?",
+    a: "Pitanja kreira i proverava naš tim, a deo predlažu i sami korisnici kroz opciju predloga pitanja koju admin pregleda pre objave.",
+  },
 ];
 
 const jsonLd = {
@@ -136,20 +148,82 @@ const jsonLd = {
   },
 };
 
-const faqJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  mainEntity: faqs.map((f) => ({
-    "@type": "Question",
-    name: f.q,
-    acceptedAnswer: {
-      "@type": "Answer",
-      text: f.a,
-    },
-  })),
-};
+interface CategoryChip {
+  id: string;
+  name: string;
+  slug: string;
+  emoji: string | null;
+}
 
-export default function LandingPage() {
+async function getCategories(): Promise<CategoryChip[]> {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  );
+  const { data } = await supabase
+    .from("categories")
+    .select("id, name, slug, emoji")
+    .order("name");
+  return data ?? [];
+}
+
+async function getTotalQuestionCount(): Promise<number> {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  );
+  const { data } = await supabase.rpc("get_public_category_counts");
+  return (
+    (data as { question_count: number }[] | null)?.reduce(
+      (sum, row) => sum + row.question_count,
+      0,
+    ) ?? 0
+  );
+}
+
+// Rounds down to the nearest thousand for an approximate, always-true "N000+"
+// stat that doesn't need manual updates as the question bank grows (found
+// via a prod audit that the previous hardcoded "1000+" had gone stale - the
+// real count was already 4400+).
+function approxCount(n: number): string {
+  if (n >= 1000) return `${Math.floor(n / 1000)}000+`;
+  return String(n);
+}
+
+export default async function LandingPage() {
+  const [categories, totalQuestions] = await Promise.all([
+    getCategories(),
+    getTotalQuestionCount(),
+  ]);
+
+  const questionsDisplay = approxCount(totalQuestions);
+  const stats = [
+    { value: questionsDisplay, label: "Pitanja" },
+    { value: String(categories.length), label: "Kategorija" },
+    { value: "∞", label: "Pokušaja" },
+  ];
+
+  const resolvedFaqs = faqs.map((f) => ({
+    ...f,
+    a: f.a.replace(
+      "{TOTAL_QUESTIONS_SENTENCE}",
+      `Baza trenutno sadrži preko ${questionsDisplay} kviz pitanja raspoređenih u ${categories.length} kategorija, od istorije i geografije do pop kulture i sporta, i redovno se dopunjuje.`,
+    ),
+  }));
+
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: resolvedFaqs.map((f) => ({
+      "@type": "Question",
+      name: f.q,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: f.a,
+      },
+    })),
+  };
+
   return (
     <div className="min-h-dvh flex flex-col">
       {/* JSON-LD Structured Data */}
@@ -183,15 +257,16 @@ export default function LandingPage() {
         </div>
       </header>
 
+      <main className="flex-1 flex flex-col">
       {/* Hero */}
       <section className="flex-1 flex flex-col items-center justify-center text-center px-4 pt-16 pb-12">
         <div className="max-w-2xl mx-auto space-y-6">
-          <span className="inline-block bg-[var(--accent)]/10 text-[var(--accent)] text-xs font-semibold px-4 py-1.5 rounded-full border border-[var(--accent)]/20 animate-fade-in">
+          <span className="inline-block bg-[var(--accent)]/10 text-[var(--accent-text)] text-xs font-semibold px-4 py-1.5 rounded-full border border-[var(--accent)]/20 animate-fade-in">
             Besplatna platforma za vežbanje
           </span>
 
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight text-balance animate-fade-in-up">
-            Ko Zna <span className="text-[var(--accent)]">Zna</span>
+            Ko Zna <span className="text-[var(--accent-text)]">Zna</span>
           </h1>
           <p
             className="text-lg sm:text-xl text-[var(--muted)] max-w-lg mx-auto text-balance animate-fade-in-up"
@@ -241,7 +316,7 @@ export default function LandingPage() {
         <div className="max-w-3xl mx-auto grid grid-cols-3 divide-x divide-[var(--border)]">
           {stats.map((s) => (
             <div key={s.label} className="text-center py-8 px-4">
-              <div className="text-3xl sm:text-4xl font-bold text-[var(--accent)]">
+              <div className="text-3xl sm:text-4xl font-bold text-[var(--accent-text)]">
                 {s.value}
               </div>
               <div className="text-sm text-[var(--muted)] mt-1">{s.label}</div>
@@ -255,11 +330,11 @@ export default function LandingPage() {
         <div className="max-w-4xl mx-auto">
           <RevealSection className="text-center mb-12">
             <h2 className="text-2xl sm:text-3xl font-bold">
-              Zašto <span className="text-[var(--accent)]">KZZ</span>?
+              Zašto <span className="text-[var(--accent-text)]">KZZ</span>?
             </h2>
             <p className="text-[var(--muted)] mt-3 max-w-md mx-auto text-balance">
-              Jedna platforma, sve što ti treba za pripremu. Bez obzira da li
-              ideš na kviz veče ili polažeš prijemni.
+              Jedna platforma za sav kviz opšte kulture koji ti treba. Bez
+              obzira da li ideš na kviz veče ili polažeš prijemni.
             </p>
           </RevealSection>
 
@@ -304,11 +379,11 @@ export default function LandingPage() {
               {
                 step: "3",
                 title: "Vežbaj i napreduj",
-                desc: "Odgovaraj na pitanja, prati statistiku i poboljšavaj rezultate.",
+                desc: "Odgovaraj na pitanja, pregledaj tačne odgovore i prati statistiku napretka.",
               },
             ].map((item) => (
               <div key={item.step} className="space-y-3">
-                <div className="w-12 h-12 rounded-full bg-[var(--accent)]/10 border border-[var(--accent)]/20 flex items-center justify-center mx-auto text-[var(--accent)] font-bold text-lg">
+                <div className="w-12 h-12 rounded-full bg-[var(--accent)]/10 border border-[var(--accent)]/20 flex items-center justify-center mx-auto text-[var(--accent-text)] font-bold text-lg">
                   {item.step}
                 </div>
                 <h3 className="font-semibold">{item.title}</h3>
@@ -318,6 +393,44 @@ export default function LandingPage() {
           </RevealChildren>
         </div>
       </section>
+
+      {/* Question bank / categories */}
+      {categories.length > 0 && (
+        <RevealSection className="py-16 px-4 bg-[var(--card)] border-y border-[var(--border)]">
+          <div className="max-w-3xl mx-auto text-center space-y-6">
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-bold text-balance">
+                Hiljade kviz pitanja iz svih oblasti
+              </h2>
+              <p className="text-[var(--muted)] mt-3 max-w-lg mx-auto text-balance">
+                Naš kviz znanja pokriva {categories.length} kategorija - od
+                istorije i geografije do pop kulture, sporta i muzike. Idealno
+                bilo da voliš klasičan test znanja ili brze trivia izazove.
+                Pregledaj kategorije i isprobaj besplatne primere pitanja pre
+                nego što se prijaviš.
+              </p>
+            </div>
+            <div className="flex flex-wrap justify-center gap-2">
+              {categories.map((cat) => (
+                <Link
+                  key={cat.id}
+                  href={`/kategorije/${cat.slug}`}
+                  className="inline-flex items-center gap-1.5 bg-[var(--background)] border border-[var(--border)] rounded-full px-3.5 py-1.5 text-xs font-medium hover:border-[var(--accent)]/50 transition-colors"
+                >
+                  {cat.emoji && <span>{cat.emoji}</span>}
+                  {cat.name}
+                </Link>
+              ))}
+            </div>
+            <Link
+              href="/kategorije"
+              className="inline-flex items-center justify-center border border-[var(--border)] text-sm font-medium rounded-xl px-5 py-2.5 hover:border-[var(--accent)]/50 transition-colors"
+            >
+              Pogledaj sve kategorije kviz pitanja →
+            </Link>
+          </div>
+        </RevealSection>
+      )}
 
       {/* Testimonial / Social proof */}
       <RevealSection className="py-16 px-4">
@@ -376,7 +489,7 @@ export default function LandingPage() {
           </RevealSection>
 
           <RevealChildren className="space-y-3">
-            {faqs.map((faq) => (
+            {resolvedFaqs.map((faq) => (
               <details
                 key={faq.q}
                 className="group bg-[var(--background)] border border-[var(--border)] rounded-xl overflow-hidden"
@@ -434,7 +547,7 @@ export default function LandingPage() {
           </p>
           <a
             href="mailto:radojevic.laza@gmail.com"
-            className="inline-flex items-center gap-2 text-[var(--accent)] hover:text-[var(--accent-hover)] font-medium text-sm transition-colors"
+            className="inline-flex items-center gap-2 text-[var(--accent-text)] hover:text-[var(--accent-hover)] font-medium text-sm transition-colors"
           >
             <svg
               className="w-4 h-4"
@@ -453,6 +566,7 @@ export default function LandingPage() {
           </a>
         </div>
       </RevealSection>
+      </main>
 
       {/* Footer */}
       <footer className="border-t border-[var(--border)] py-8 px-4">

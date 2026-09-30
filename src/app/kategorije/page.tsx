@@ -44,6 +44,7 @@ export const metadata: Metadata = {
 interface Category {
   id: string;
   name: string;
+  slug: string;
   description: string | null;
   emoji: string | null;
 }
@@ -53,10 +54,19 @@ export default async function KategorijeePage() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   );
-  const { data: categories } = await supabase
-    .from("categories")
-    .select("id, name, description, emoji")
-    .order("name");
+  const [{ data: categories }, { data: counts }] = await Promise.all([
+    supabase
+      .from("categories")
+      .select("id, name, slug, description, emoji")
+      .order("name"),
+    supabase.rpc("get_public_category_counts"),
+  ]);
+
+  const countByCategory = new Map(
+    (
+      (counts as { category_id: string; question_count: number }[]) ?? []
+    ).map((c) => [c.category_id, c.question_count]),
+  );
 
   return (
     <div className="min-h-dvh flex flex-col bg-[var(--background)]">
@@ -91,24 +101,32 @@ export default async function KategorijeePage() {
         {categories && categories.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {(categories as Category[]).map((cat) => (
-              <div
+              <Link
                 key={cat.id}
+                href={`/kategorije/${cat.slug}`}
                 className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-5 space-y-2 hover:border-[var(--accent)]/50 transition-colors"
               >
-                <div className="flex items-center gap-3">
-                  {cat.emoji && (
-                    <span className="text-2xl">{cat.emoji}</span>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    {cat.emoji && (
+                      <span className="text-2xl shrink-0">{cat.emoji}</span>
+                    )}
+                    <h3 className="font-semibold text-[var(--foreground)] truncate">
+                      {cat.name}
+                    </h3>
+                  </div>
+                  {countByCategory.has(cat.id) && (
+                    <span className="shrink-0 text-xs text-[var(--muted)] bg-[var(--background)] border border-[var(--border)] rounded-full px-2.5 py-1">
+                      {countByCategory.get(cat.id)} pitanja
+                    </span>
                   )}
-                  <h3 className="font-semibold text-[var(--foreground)]">
-                    {cat.name}
-                  </h3>
                 </div>
                 {cat.description && (
                   <p className="text-sm text-[var(--muted)] leading-relaxed">
                     {cat.description}
                   </p>
                 )}
-              </div>
+              </Link>
             ))}
           </div>
         ) : (
@@ -120,9 +138,12 @@ export default async function KategorijeePage() {
         )}
 
         <div className="mt-10 bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 text-center space-y-3">
-          <p className="text-sm font-semibold">Niste sigurni odakle da počnete?</p>
+          <p className="text-sm font-semibold">
+            Niste sigurni odakle da počnete?
+          </p>
           <p className="text-xs text-[var(--muted)]">
-            Isprobajte demo bez registracije ili se prijavite da pratite napredak.
+            Isprobajte demo bez registracije ili se prijavite da pratite
+            napredak.
           </p>
           <div className="flex gap-3 justify-center flex-wrap">
             <Link

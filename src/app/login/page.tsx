@@ -318,7 +318,7 @@ function LoginForm() {
                       setError("");
                       setSuccess("");
                     }}
-                    className="text-xs text-[var(--muted)] hover:text-[var(--accent)] transition-colors"
+                    className="text-xs text-[var(--muted)] hover:text-[var(--accent-text)] transition-colors"
                   >
                     Zaboravili ste lozinku?
                   </button>
@@ -350,7 +350,7 @@ function LoginForm() {
                   setError("");
                   setSuccess("");
                 }}
-                className="text-[var(--accent)] hover:underline"
+                className="text-[var(--accent-text)] hover:underline"
               >
                 ← Nazad na prijavu
               </button>
@@ -364,7 +364,7 @@ function LoginForm() {
                     setError("");
                     setSuccess("");
                   }}
-                  className="text-[var(--accent)] hover:underline"
+                  className="text-[var(--accent-text)] hover:underline"
                 >
                   {isSignUp ? "Prijavi se" : "Registruj se"}
                 </button>

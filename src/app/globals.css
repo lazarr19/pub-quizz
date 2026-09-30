@@ -7,11 +7,20 @@
   --foreground: #eaeaf0;
   --card: #1a1a2e;
   --card-hover: #222240;
-  --accent: #6c63ff;
-  --accent-hover: #5a52d5;
+  /* --accent: solid-fill background (buttons, badges), paired with white
+     text - darkened from the original #6c63ff so white-on-accent clears
+     WCAG AA (4.5:1). --accent-text: same hue, lightened for use as
+     standalone text color on dark backgrounds - a single value can't
+     satisfy both contrast directions at once (verified: darkening helps
+     the button case but fails the text case, and vice versa). */
+  --accent: #635aef;
+  --accent-hover: #5249d8;
+  --accent-text: #8981ff;
   --success: #22c55e;
   --error: #ef4444;
-  --muted: #6b7280;
+  /* --muted: lightened from #6b7280 so it clears 4.5:1 against both
+     --background and --card (the harder of the two surfaces it appears on). */
+  --muted: #868ba0;
   --border: #2a2a45;
 }
 

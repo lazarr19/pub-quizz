@@ -172,7 +172,7 @@ export default function DailyChallengePage() {
             <p className="text-[var(--muted)] mb-1">
               Osvojili ste {correctCount}/10 tačnih odgovora.
             </p>
-            <p className="text-sm text-[var(--accent)] mb-6">
+            <p className="text-sm text-[var(--accent-text)] mb-6">
               🔥 Niz je sačuvan za danas!
             </p>
 

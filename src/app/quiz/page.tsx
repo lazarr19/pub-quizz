@@ -334,7 +334,7 @@ function QuizContent() {
           <p className="text-[var(--muted)]">Niste izabrali kategorije.</p>
           <button
             onClick={() => router.push("/lobby")}
-            className="mt-4 text-[var(--accent)] hover:underline"
+            className="mt-4 text-[var(--accent-text)] hover:underline"
           >
             Nazad na početnu
           </button>

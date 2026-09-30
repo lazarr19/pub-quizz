@@ -280,7 +280,7 @@ export default function DemoPage() {
             />{" "}
             <span>KZZ</span>
           </Link>
-          <span className="text-xs bg-[var(--accent)]/10 text-[var(--accent)] px-3 py-1 rounded-full font-semibold border border-[var(--accent)]/20">
+          <span className="text-xs bg-[var(--accent)]/10 text-[var(--accent-text)] px-3 py-1 rounded-full font-semibold border border-[var(--accent)]/20">
             DEMO
           </span>
         </div>

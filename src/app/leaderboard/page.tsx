@@ -157,7 +157,7 @@ export default function LeaderboardPage() {
                         <span
                           className={`w-8 text-center text-sm font-bold ${
                             isMe
-                              ? "text-[var(--accent)]"
+                              ? "text-[var(--accent-text)]"
                               : entry.rank <= 3
                                 ? "text-[var(--foreground)]"
                                 : "text-[var(--muted)]"
@@ -168,7 +168,7 @@ export default function LeaderboardPage() {
                         <span
                           className={`text-sm ${
                             isMe
-                              ? "font-semibold text-[var(--accent)]"
+                              ? "font-semibold text-[var(--accent-text)]"
                               : "font-medium"
                           }`}
                         >
@@ -182,7 +182,7 @@ export default function LeaderboardPage() {
                       </div>
                       <span
                         className={`text-sm font-semibold tabular-nums ${
-                          isMe ? "text-[var(--accent)]" : "text-[var(--muted)]"
+                          isMe ? "text-[var(--accent-text)]" : "text-[var(--muted)]"
                         }`}
                       >
                         {entry.correct_count}
@@ -208,17 +208,17 @@ export default function LeaderboardPage() {
             <div className="bg-[var(--card)] rounded-2xl border border-[var(--accent)]/30 p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <span className="w-8 text-center text-sm font-bold text-[var(--accent)]">
+                  <span className="w-8 text-center text-sm font-bold text-[var(--accent-text)]">
                     #{data.current_user.rank}
                   </span>
-                  <span className="text-sm font-semibold text-[var(--accent)]">
+                  <span className="text-sm font-semibold text-[var(--accent-text)]">
                     {data.current_user.display_name}
                     <span className="text-xs text-[var(--muted)] ml-1.5">
                       (vi)
                     </span>
                   </span>
                 </div>
-                <span className="text-sm font-semibold tabular-nums text-[var(--accent)]">
+                <span className="text-sm font-semibold tabular-nums text-[var(--accent-text)]">
                   {data.current_user.correct_count}
                 </span>
               </div>
@@ -271,7 +271,7 @@ export default function LeaderboardPage() {
                         <span
                           className={`w-8 text-center text-sm font-bold ${
                             isMe
-                              ? "text-[var(--accent)]"
+                              ? "text-[var(--accent-text)]"
                               : entry.rank <= 3
                                 ? "text-[var(--foreground)]"
                                 : "text-[var(--muted)]"
@@ -282,7 +282,7 @@ export default function LeaderboardPage() {
                         <span
                           className={`text-sm ${
                             isMe
-                              ? "font-semibold text-[var(--accent)]"
+                              ? "font-semibold text-[var(--accent-text)]"
                               : "font-medium"
                           }`}
                         >
@@ -298,7 +298,7 @@ export default function LeaderboardPage() {
                         <span
                           className={`text-sm font-semibold tabular-nums ${
                             isMe
-                              ? "text-[var(--accent)]"
+                              ? "text-[var(--accent-text)]"
                               : "text-[var(--muted)]"
                           }`}
                         >
@@ -337,10 +337,10 @@ export default function LeaderboardPage() {
                   <>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <span className="w-8 text-center text-sm font-bold text-[var(--accent)]">
+                        <span className="w-8 text-center text-sm font-bold text-[var(--accent-text)]">
                           #{streakData.current_user.rank}
                         </span>
-                        <span className="text-sm font-semibold text-[var(--accent)]">
+                        <span className="text-sm font-semibold text-[var(--accent-text)]">
                           {streakData.current_user.display_name}
                           <span className="text-xs text-[var(--muted)] ml-1.5">
                             (vi)
@@ -348,7 +348,7 @@ export default function LeaderboardPage() {
                         </span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <span className="text-sm font-semibold tabular-nums text-[var(--accent)]">
+                        <span className="text-sm font-semibold tabular-nums text-[var(--accent-text)]">
                           {streakData.current_user.streak}d
                         </span>
                         {!streakData.current_user.answered_today && (

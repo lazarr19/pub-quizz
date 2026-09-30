@@ -191,7 +191,7 @@ export default function LobbyPage() {
                       : "10 novih pitanja, isto za sve - odigrajte danas!"}
                 </p>
               </div>
-              <span className="text-[var(--accent)] text-sm font-medium shrink-0 ml-3">
+              <span className="text-[var(--accent-text)] text-sm font-medium shrink-0 ml-3">
                 {dailyStatus.answered === 10 ? "Pregled →" : "Igraj →"}
               </span>
             </button>
@@ -250,7 +250,7 @@ export default function LobbyPage() {
               <h2 className="text-lg font-semibold">Kategorije</h2>
               <button
                 onClick={selectAll}
-                className="text-xs text-[var(--accent)] hover:underline"
+                className="text-xs text-[var(--accent-text)] hover:underline"
               >
                 {mode === "mistakes"
                   ? selected.size ===
