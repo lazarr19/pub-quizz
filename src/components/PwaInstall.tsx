@@ -11,6 +11,13 @@ const DISMISS_KEY = "kzz-install-dismissed-at";
 const DISMISS_DAYS = 1;
 const LAST_SHOWN_KEY = "kzz-install-last-shown-at";
 const RESHOW_COOLDOWN_DAYS = 3;
+// Delay showing the banner after it becomes eligible so it can't paint
+// during the page's initial load - browsers (and Lighthouse) can fire
+// beforeinstallprompt almost immediately, which was making this small
+// floating banner register as the page's Largest Contentful Paint element
+// instead of the real hero content. A delay is also just better UX: a
+// promo banner popping in the instant the page loads reads as naggy.
+const SHOW_DELAY_MS = 5000;
 
 function daysSince(key: string) {
   const raw = localStorage.getItem(key);
@@ -42,11 +49,20 @@ export default function PwaInstall() {
     if (daysSince(DISMISS_KEY) < DISMISS_DAYS) return;
     if (daysSince(LAST_SHOWN_KEY) < RESHOW_COOLDOWN_DAYS) return;
 
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    const revealAfterDelay = () => {
+      timers.push(
+        setTimeout(() => {
+          setVisible(true);
+          markShown();
+        }, SHOW_DELAY_MS),
+      );
+    };
+
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
-      setVisible(true);
-      markShown();
+      revealAfterDelay();
     };
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 
@@ -56,15 +72,16 @@ export default function PwaInstall() {
     const isSafari = /safari/i.test(ua) && !/crios|fxios/i.test(ua);
     if (isIos && isSafari) {
       setShowIosBanner(true);
-      setVisible(true);
-      markShown();
+      revealAfterDelay();
     }
 
-    return () =>
+    return () => {
       window.removeEventListener(
         "beforeinstallprompt",
         handleBeforeInstallPrompt,
       );
+      timers.forEach(clearTimeout);
+    };
   }, []);
 
   const dismiss = () => {
