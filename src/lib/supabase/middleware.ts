@@ -1,7 +1,25 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+// Routes where the auth redirect logic below can never change the
+// outcome (always public, never redirected away from regardless of auth
+// state) - skip the Supabase auth network round-trip entirely for these,
+// since it was adding ~600ms of server response time for no behavioral
+// benefit. Session-cookie refresh still happens on every other route, so a
+// logged-in user's session stays alive via their next app-page visit.
+function isAlwaysPublicPath(pathname: string): boolean {
+  return (
+    pathname === "/" ||
+    pathname === "/demo" ||
+    pathname.startsWith("/kategorije")
+  );
+}
+
 export async function updateSession(request: NextRequest) {
+  if (isAlwaysPublicPath(request.nextUrl.pathname)) {
+    return NextResponse.next({ request });
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -30,10 +48,9 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   // Redirect unauthenticated users to login
+  // (isAlwaysPublicPath routes - "/", "/demo", "/kategorije" - already
+  // returned above, so they can't reach this check)
   const isAuthPage = request.nextUrl.pathname === "/login";
-  const isLandingPage = request.nextUrl.pathname === "/";
-  const isDemoPage = request.nextUrl.pathname === "/demo";
-  const isKategorijeePage = request.nextUrl.pathname.startsWith("/kategorije");
   const isAdminPage = request.nextUrl.pathname.startsWith("/admin");
   const isApiRoute = request.nextUrl.pathname.startsWith("/api/");
   const isResetPasswordPage = request.nextUrl.pathname === "/reset-password";
@@ -42,9 +59,6 @@ export async function updateSession(request: NextRequest) {
   if (
     !user &&
     !isAuthPage &&
-    !isLandingPage &&
-    !isDemoPage &&
-    !isKategorijeePage &&
     !isApiRoute &&
     !isResetPasswordPage &&
     !isAuthConfirmPage
