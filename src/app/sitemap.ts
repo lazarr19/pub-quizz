@@ -26,6 +26,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly",
       priority: 0.8,
     },
+    {
+      url: `${siteUrl}/pub-kviz-pitanja`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
     ...((categories ?? []) as { slug: string }[]).map((cat) => ({
       url: `${siteUrl}/kategorije/${cat.slug}`,
       lastModified: new Date(),

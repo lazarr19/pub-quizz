@@ -123,8 +123,63 @@ export default async function CategoryPage({
   const genitive = categoryGenitive(category.slug, category.name);
   const otherCategories = allCategories.filter((c) => c.id !== category.id);
 
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL || "https://koznazna.rs";
+  const pageUrl = `${siteUrl}/kategorije/${category.slug}`;
+
+  // Breadcrumb + CollectionPage only. Deliberately NOT Question/Quiz markup:
+  // these pages withhold the correct answer by design, and Question schema
+  // without an acceptedAnswer is invalid structured data.
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Početna", item: siteUrl },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Kategorije",
+        item: `${siteUrl}/kategorije`,
+      },
+      { "@type": "ListItem", position: 3, name: category.name, item: pageUrl },
+    ],
+  };
+
+  const collectionJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: `Kviz pitanja iz ${genitive}`,
+    description:
+      category.description ??
+      `Kviz pitanja iz ${genitive} za vežbanje opšteg znanja.`,
+    url: pageUrl,
+    inLanguage: "sr",
+    isPartOf: {
+      "@type": "WebSite",
+      name: "Ko Zna Zna",
+      url: siteUrl,
+    },
+    ...(questionCount > 0
+      ? {
+          mainEntity: {
+            "@type": "ItemList",
+            name: `Kviz pitanja iz ${genitive}`,
+            numberOfItems: questionCount,
+          },
+        }
+      : {}),
+  };
+
   return (
     <div className="min-h-dvh flex flex-col bg-[var(--background)]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }}
+      />
       <header className="sticky top-0 z-50 bg-[var(--card)]/80 backdrop-blur-md border-b border-[var(--border)]">
         <div className="max-w-2xl mx-auto flex items-center gap-3 px-4 py-3">
           <Link

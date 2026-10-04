@@ -422,12 +422,20 @@ export default async function LandingPage() {
                 </Link>
               ))}
             </div>
-            <Link
-              href="/kategorije"
-              className="inline-flex items-center justify-center border border-[var(--border)] text-sm font-medium rounded-xl px-5 py-2.5 hover:border-[var(--accent)]/50 transition-colors"
-            >
-              Pogledaj sve kategorije kviz pitanja →
-            </Link>
+            <div className="flex gap-3 justify-center flex-wrap">
+              <Link
+                href="/kategorije"
+                className="inline-flex items-center justify-center border border-[var(--border)] text-sm font-medium rounded-xl px-5 py-2.5 hover:border-[var(--accent)]/50 transition-colors"
+              >
+                Pogledaj sve kategorije kviz pitanja →
+              </Link>
+              <Link
+                href="/pub-kviz-pitanja"
+                className="inline-flex items-center justify-center border border-[var(--border)] text-sm font-medium rounded-xl px-5 py-2.5 hover:border-[var(--accent)]/50 transition-colors"
+              >
+                Pub kviz pitanja za kviz veče →
+              </Link>
+            </div>
           </div>
         </RevealSection>
       )}

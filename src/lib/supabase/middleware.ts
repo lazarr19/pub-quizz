@@ -11,6 +11,7 @@ function isAlwaysPublicPath(pathname: string): boolean {
   return (
     pathname === "/" ||
     pathname === "/demo" ||
+    pathname === "/pub-kviz-pitanja" ||
     pathname.startsWith("/kategorije")
   );
 }
@@ -48,8 +49,8 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   // Redirect unauthenticated users to login
-  // (isAlwaysPublicPath routes - "/", "/demo", "/kategorije" - already
-  // returned above, so they can't reach this check)
+  // (isAlwaysPublicPath routes - "/", "/demo", "/pub-kviz-pitanja",
+  // "/kategorije" - already returned above, so they can't reach this check)
   const isAuthPage = request.nextUrl.pathname === "/login";
   const isAdminPage = request.nextUrl.pathname.startsWith("/admin");
   const isApiRoute = request.nextUrl.pathname.startsWith("/api/");
