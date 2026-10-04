@@ -8,7 +8,7 @@ export const revalidate = 3600;
 export const metadata: Metadata = {
   title: "Pub kviz pitanja i odgovori - spreman set za kviz veče",
   description:
-    "Besplatna pub kviz pitanja po rundama: opšte znanje, istorija, geografija, sport, muzika i film. Gotov set za kviz veče u kafiću ili za vežbanje kod kuće.",
+    "Besplatan set pub kviz pitanja sa tačnim odgovorima, podeljen po rundama: opšte znanje, istorija, geografija, sport, muzika i film. Gotovo za kviz veče u kafiću.",
   keywords: [
     "pub kviz pitanja",
     "pab kviz pitanja",
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Pub kviz pitanja i odgovori - Ko Zna Zna",
     description:
-      "Gotov set pub kviz pitanja po rundama, besplatno. Opšte znanje, istorija, geografija, sport, muzika i film.",
+      "Gotov set pub kviz pitanja sa odgovorima, po rundama. Opšte znanje, istorija, geografija, sport, muzika i film.",
     type: "website",
     locale: "sr_RS",
   },
@@ -34,87 +34,61 @@ export const metadata: Metadata = {
   },
 };
 
-interface Category {
-  id: string;
-  name: string;
-  slug: string;
-  emoji: string | null;
-}
-
-interface SampleQuestion {
+// Shape of get_public_pub_quiz_set() (migration 018). The round list and the
+// 6-per-round window live in SQL, so this page just renders what it gets.
+interface QuizSetRow {
+  round_order: number;
+  category_id: string;
+  category_name: string;
+  category_slug: string;
+  category_emoji: string | null;
   id: string;
   content: string;
   option_1: string;
   option_2: string;
   option_3: string;
+  correct_option: number;
 }
 
 interface Round {
-  category: Category;
-  questions: SampleQuestion[];
-}
-
-// Categories that actually come up on a pub quiz night, in running order.
-// Anything missing from the DB is simply skipped.
-const ROUND_SLUGS = [
-  "opste-znanje",
-  "istorija",
-  "geografija",
-  "sport",
-  "muzika",
-  "film",
-  "pop-kultura",
-];
-
-const QUESTIONS_PER_ROUND = 6;
-// /kategorije/[slug] already renders the first 20 questions of each category.
-// Starting past that window keeps this page's content genuinely distinct
-// instead of duplicating the category pages.
-const CATEGORY_PAGE_SAMPLE_SIZE = 20;
-
-function getClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  );
+  order: number;
+  categoryId: string;
+  categoryName: string;
+  categorySlug: string;
+  categoryEmoji: string | null;
+  questions: QuizSetRow[];
 }
 
 async function getRounds(): Promise<Round[]> {
-  const supabase = getClient();
-  const { data: categories } = await supabase
-    .from("categories")
-    .select("id, name, slug, emoji");
-
-  const bySlug = new Map(
-    ((categories as Category[]) ?? []).map((c) => [c.slug, c]),
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   );
+  const { data } = await supabase.rpc("get_public_pub_quiz_set");
+  const rows = (data as QuizSetRow[] | null) ?? [];
 
-  const rounds = await Promise.all(
-    ROUND_SLUGS.map(async (slug) => {
-      const category = bySlug.get(slug);
-      if (!category) return null;
+  const byRound = new Map<number, Round>();
+  for (const row of rows) {
+    let round = byRound.get(row.round_order);
+    if (!round) {
+      round = {
+        order: row.round_order,
+        categoryId: row.category_id,
+        categoryName: row.category_name,
+        categorySlug: row.category_slug,
+        categoryEmoji: row.category_emoji,
+        questions: [],
+      };
+      byRound.set(row.round_order, round);
+    }
+    round.questions.push(row);
+  }
 
-      const { data } = await supabase.rpc("get_public_sample_questions", {
-        p_category_id: category.id,
-        p_limit: 50,
-      });
-      const all = (data as SampleQuestion[] | null) ?? [];
+  return Array.from(byRound.values()).sort((a, b) => a.order - b.order);
+}
 
-      // Prefer questions the category page doesn't already show; fall back to
-      // the tail of whatever exists for thinly-populated categories.
-      const fresh = all.slice(CATEGORY_PAGE_SAMPLE_SIZE);
-      const questions = (
-        fresh.length >= QUESTIONS_PER_ROUND
-          ? fresh
-          : all.slice(-QUESTIONS_PER_ROUND)
-      ).slice(0, QUESTIONS_PER_ROUND);
-
-      if (questions.length === 0) return null;
-      return { category, questions };
-    }),
-  );
-
-  return rounds.filter((r): r is Round => r !== null);
+function correctAnswerOf(q: QuizSetRow): string {
+  return [q.option_1, q.option_2, q.option_3][q.correct_option - 1] ?? "";
 }
 
 const faqs = [
@@ -123,20 +97,20 @@ const faqs = [
     a: "Standardno kviz veče ima 5 do 7 rundi sa po 6 do 10 pitanja, dakle između 40 i 70 pitanja ukupno. Set na ovoj strani pokriva jedno celo veče.",
   },
   {
+    q: "Gde su tačni odgovori?",
+    a: "Odgovor stoji ispod svakog pitanja - klikni na „Prikaži odgovor“ da ga otvoriš. Odgovori su sakriveni samo da ne bi upali u oči dok čitaš pitanja ekipi.",
+  },
+  {
     q: "Da li su pub kviz pitanja besplatna?",
-    a: "Jesu. Sva pitanja na Ko Zna Zna su besplatna i možeš ih koristiti za kviz veče u kafiću, na proslavi ili za vežbanje kod kuće.",
+    a: "Jesu. Sva pitanja i odgovori na ovoj strani su besplatni i možeš ih koristiti za kviz veče u kafiću, na proslavi ili za vežbanje kod kuće. Nije potrebna registracija.",
   },
   {
     q: "Kako se piše - pub kviz ili pab kviz?",
     a: "Oba oblika se koriste u govoru. Pub kviz je uobičajeniji u pisanoj formi, dok se pab kviz javlja kao fonetski zapis engleske reči pub.",
   },
   {
-    q: "Gde mogu da vidim tačne odgovore?",
-    a: "Prijavi se besplatno na Ko Zna Zna i dobijaš tačne odgovore, objašnjenja i praćenje napretka kroz sve kategorije.",
-  },
-  {
-    q: "Mogu li da napravim svoj set pitanja po kategorijama?",
-    a: "Da. Svaka kategorija ima svoju stranicu sa primerima pitanja, a nakon prijave možeš da vežbaš bilo koju kombinaciju kategorija.",
+    q: "Mogu li da dobijem više pitanja?",
+    a: "Da. Ovaj set je mali izbor iz baze od nekoliko hiljada pitanja. Prijavi se besplatno da vežbaš bilo koju kombinaciju kategorija, pratiš napredak i ponavljaš pitanja koja si pogrešio.",
   },
 ];
 
@@ -199,15 +173,15 @@ export default async function PubKvizPitanjaPage() {
             Pub kviz pitanja i odgovori za kviz veče
           </h2>
           <p className="text-[var(--muted)] text-sm leading-relaxed">
-            Spreman set pub kviz pitanja, podeljen po rundama kao na pravom
-            kviz veču. Pitanja su birana tako da pokriju širok spektar tema -
-            od opšteg znanja i istorije do sporta, muzike i filma - pa set
-            odgovara i ekipi početnika i iskusnim kvizašima.
+            Spreman set pub kviz pitanja sa tačnim odgovorima, podeljen po
+            rundama kao na pravom kviz veču. Pitanja su birana tako da pokriju
+            širok spektar tema - od opšteg znanja i istorije do sporta, muzike i
+            filma - pa set odgovara i ekipi početnika i iskusnim kvizašima.
           </p>
           <p className="text-[var(--muted)] text-sm leading-relaxed">
-            Koristi ga kako god ti odgovara: kao gotov scenario za kviz veče u
-            kafiću, kao zagrevanje pred takmičenje, ili jednostavno da proveriš
-            koliko znaš. Sva pitanja su besplatna i bez registracije.
+            Svaki odgovor je sakriven iza dugmeta „Prikaži odgovor“, pa možeš
+            mirno da čitaš pitanja naglas bez da ti odgovor upadne u oči.
+            Besplatno je i ne traži registraciju.
             {totalQuestions > 0 && (
               <>
                 {" "}
@@ -219,20 +193,6 @@ export default async function PubKvizPitanjaPage() {
               </>
             )}
           </p>
-          <div className="flex gap-3 flex-wrap">
-            <Link
-              href="/login"
-              className="inline-flex items-center justify-center bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-sm font-semibold rounded-xl px-5 py-2.5 transition-colors"
-            >
-              Vidi tačne odgovore →
-            </Link>
-            <Link
-              href="/demo"
-              className="inline-flex items-center justify-center border border-[var(--border)] text-sm font-medium rounded-xl px-5 py-2.5 hover:border-[var(--accent)]/50 transition-colors"
-            >
-              Probaj demo
-            </Link>
-          </div>
         </div>
 
         <section className="mb-10 bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 space-y-3">
@@ -254,22 +214,21 @@ export default async function PubKvizPitanjaPage() {
 
         {rounds.length > 0 ? (
           <div className="space-y-8">
-            {rounds.map((round, roundIndex) => (
-              <section key={round.category.id} className="space-y-4">
+            {rounds.map((round) => (
+              <section key={round.categoryId} className="space-y-4">
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <h3 className="font-bold text-lg">
-                    {round.category.emoji && (
-                      <span className="mr-1.5">{round.category.emoji}</span>
+                    {round.categoryEmoji && (
+                      <span className="mr-1.5">{round.categoryEmoji}</span>
                     )}
-                    {roundIndex + 1}. runda - {round.category.name}
+                    {round.order}. runda - {round.categoryName}
                   </h3>
                   <Link
-                    href={`/kategorije/${round.category.slug}`}
+                    href={`/kategorije/${round.categorySlug}`}
                     className="text-xs text-[var(--accent-text)] hover:underline"
                   >
                     Još pitanja iz{" "}
-                    {categoryGenitive(round.category.slug, round.category.name)}{" "}
-                    →
+                    {categoryGenitive(round.categorySlug, round.categoryName)} →
                   </Link>
                 </div>
 
@@ -295,6 +254,20 @@ export default async function PubKvizPitanjaPage() {
                           </li>
                         ))}
                       </ul>
+                      {/* Native <details>: no client JS, and the answer stays
+                          in the server-rendered HTML so it is indexable - the
+                          whole point of a "pitanja i odgovori" page. */}
+                      <details className="group">
+                        <summary className="cursor-pointer list-none inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--accent-text)] hover:underline">
+                          <span className="transition-transform group-open:rotate-90">
+                            ▸
+                          </span>
+                          Prikaži odgovor
+                        </summary>
+                        <p className="mt-2 text-sm font-semibold text-[var(--foreground)] bg-[var(--background)] border border-[var(--border)] rounded-xl px-3.5 py-2">
+                          ✓ {correctAnswerOf(q)}
+                        </p>
+                      </details>
                     </li>
                   ))}
                 </ol>
@@ -310,10 +283,11 @@ export default async function PubKvizPitanjaPage() {
         )}
 
         <section className="mt-12 bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 text-center space-y-3">
-          <p className="font-semibold">Želiš tačne odgovore?</p>
+          <p className="font-semibold">Treba ti još pitanja?</p>
           <p className="text-sm text-[var(--muted)]">
-            Prijavi se besplatno i dobij tačne odgovore na sva pitanja, plus
-            praćenje napretka po kategorijama.
+            Ovo je mali izbor iz baze od nekoliko hiljada pitanja. Prijavi se
+            besplatno da vežbaš bilo koju kategoriju, pratiš napredak i
+            ponavljaš pitanja koja si pogrešio.
           </p>
           <div className="flex gap-3 justify-center flex-wrap">
             <Link
@@ -321,6 +295,12 @@ export default async function PubKvizPitanjaPage() {
               className="inline-flex items-center justify-center bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-sm font-semibold rounded-xl px-5 py-2.5 transition-colors"
             >
               Prijavi se
+            </Link>
+            <Link
+              href="/demo"
+              className="inline-flex items-center justify-center border border-[var(--border)] text-sm font-medium rounded-xl px-5 py-2.5 hover:border-[var(--accent)]/50 transition-colors"
+            >
+              Isprobaj demo
             </Link>
             <Link
               href="/kategorije"
