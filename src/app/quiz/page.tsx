@@ -225,26 +225,15 @@ function QuizContent() {
       setStreak(0);
     }
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
-
-    if (isPractice) {
-      if (correct) {
-        await supabase.rpc("update_practice_response", {
-          p_user_id: user.id,
-          p_question_id: question.id,
-          p_is_correct: true,
-        });
-      }
-    } else {
-      await supabase.from("user_responses").insert({
-        user_id: user.id,
-        question_id: question.id,
-        is_correct: correct,
-      });
-    }
+    // Single write path: stores the answer (or resolves a practice mistake) and
+    // logs it to answer_events. Wrong practice answers are logged too now.
+    await supabase.rpc("record_answer", {
+      p_question_id: question.id,
+      p_is_correct: correct,
+      p_mode: isPractice ? "practice" : "fresh",
+      p_served_reason: isPractice ? "practice" : "random",
+      p_session_pos: questionCount + 1,
+    });
   };
 
   const handleNext = () => {
