@@ -17,7 +17,29 @@ interface Question {
   option_2: string;
   option_3: string;
   correct_option: number;
+  // Present on get_question_batch rows (not on practice-mode rows)
+  difficulty_score?: number | null;
+  served_reason?: string;
+  is_reserve?: boolean;
 }
+
+type ServedReason =
+  | "random"
+  | "onboarding"
+  | "breaker"
+  | "breaker_withheld"
+  | "practice";
+
+// Miss-streak circuit breaker: after BREAKER_TRIGGER consecutive misses the next
+// question comes from the easy reserve, at most BREAKER_MAX_PER_RUN times until
+// the next correct answer. Each miss run is randomly held out with probability
+// BREAKER_HOLDOUT (served as normal, logged as breaker_withheld) so the effect on
+// session continuation can be measured against a concurrent control.
+const BREAKER_TRIGGER = 2;
+const BREAKER_MAX_PER_RUN = 2;
+const BREAKER_HOLDOUT = 0.2;
+const RESERVE_PER_BATCH = 2;
+const RESERVE_CAP = 4;
 
 function QuizContent() {
   const [question, setQuestion] = useState<Question | null>(null);
@@ -51,6 +73,13 @@ function QuizContent() {
   // hand back an overlapping/duplicate question between the two batches.
   const prefetchPromiseRef = useRef<Promise<void> | null>(null);
   const fetchingRef = useRef(false);
+  // Easy questions held back for the breaker; never shown unless needed.
+  const reserveRef = useRef<Question[]>([]);
+  // Why the question currently on screen was served (logged with the answer).
+  const servedReasonRef = useRef<ServedReason>("random");
+  const missRunRef = useRef(0);
+  const breakerArmRef = useRef<"breaker" | "withheld" | null>(null);
+  const breakerServedRef = useRef(0);
 
   const fetchBatch = useCallback(async (): Promise<Question[]> => {
     const {
@@ -61,24 +90,36 @@ function QuizContent() {
       return [];
     }
 
-    const rpcName = isPractice
-      ? "get_next_mistake_question"
-      : "get_next_question";
-    const { data, error } = await supabase.rpc(rpcName, {
-      p_user_id: user.id,
-      p_category_ids: categoryIds,
-      p_limit: BATCH_SIZE,
-      p_exclude_ids: Array.from(seenIdsRef.current),
-    });
+    const exclude = Array.from(seenIdsRef.current);
+    const { data, error } = isPractice
+      ? await supabase.rpc("get_next_mistake_question", {
+          p_user_id: user.id,
+          p_category_ids: categoryIds,
+          p_limit: BATCH_SIZE,
+          p_exclude_ids: exclude,
+        })
+      : await supabase.rpc("get_question_batch", {
+          p_category_ids: categoryIds,
+          p_limit: BATCH_SIZE,
+          p_exclude_ids: exclude,
+          p_reserve: RESERVE_PER_BATCH,
+        });
 
     if (error) {
       throw new Error(error.message);
     }
 
     if (data && data.length > 0) {
-      const batch = data as Question[];
-      batch.forEach((q) => seenIdsRef.current.add(q.id));
-      return batch;
+      const rows = data as Question[];
+      rows.forEach((q) => seenIdsRef.current.add(q.id));
+      const reserves = rows.filter((q) => q.is_reserve);
+      // Extra reserves beyond the cap are simply dropped for this session;
+      // they were never shown, so they stay unanswered for next time.
+      reserveRef.current = [...reserveRef.current, ...reserves].slice(
+        0,
+        RESERVE_CAP,
+      );
+      return rows.filter((q) => !q.is_reserve);
     }
     return [];
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -135,14 +176,53 @@ function QuizContent() {
           }
         }
 
-        if (queueRef.current.length === 0) {
-          setQuestion(null);
-          setAllComplete(true);
-          setLoading(false);
-          return;
+        const breakerTurn =
+          !isPractice &&
+          breakerArmRef.current !== null &&
+          missRunRef.current >= BREAKER_TRIGGER &&
+          breakerServedRef.current < BREAKER_MAX_PER_RUN;
+
+        let next: Question;
+        let reason: ServedReason;
+
+        if (
+          breakerTurn &&
+          breakerArmRef.current === "breaker" &&
+          reserveRef.current.length > 0
+        ) {
+          next = reserveRef.current.shift()!;
+          reason = "breaker";
+          breakerServedRef.current += 1;
+        } else {
+          // Category running dry: unused reserves are ordinary unseen questions.
+          if (queueRef.current.length === 0 && reserveRef.current.length > 0) {
+            queueRef.current = reserveRef.current.splice(0).map((q) => ({
+              ...q,
+              served_reason: "random",
+              is_reserve: false,
+            }));
+          }
+
+          if (queueRef.current.length === 0) {
+            setQuestion(null);
+            setAllComplete(true);
+            setLoading(false);
+            return;
+          }
+
+          next = queueRef.current.shift()!;
+          reason = isPractice
+            ? "practice"
+            : next.served_reason === "onboarding"
+              ? "onboarding"
+              : "random";
+          if (breakerTurn && breakerArmRef.current === "withheld") {
+            reason = "breaker_withheld";
+            breakerServedRef.current += 1;
+          }
         }
 
-        const next = queueRef.current.shift()!;
+        servedReasonRef.current = reason;
         setQuestion(next);
         setAllComplete(false);
         setLoading(false);
@@ -155,8 +235,9 @@ function QuizContent() {
       } finally {
         fetchingRef.current = false;
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     },
+    // isPractice comes from the URL and is fixed for the page's lifetime.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [fetchBatch, prefetchIfNeeded],
   );
 
@@ -225,13 +306,30 @@ function QuizContent() {
       setStreak(0);
     }
 
+    // Breaker bookkeeping: a correct answer ends the miss run; reaching the
+    // trigger decides once per run whether the breaker fires or is held out.
+    if (correct) {
+      missRunRef.current = 0;
+      breakerArmRef.current = null;
+      breakerServedRef.current = 0;
+    } else {
+      missRunRef.current += 1;
+      if (
+        missRunRef.current >= BREAKER_TRIGGER &&
+        breakerArmRef.current === null
+      ) {
+        breakerArmRef.current =
+          Math.random() < BREAKER_HOLDOUT ? "withheld" : "breaker";
+      }
+    }
+
     // Single write path: stores the answer (or resolves a practice mistake) and
     // logs it to answer_events. Wrong practice answers are logged too now.
     await supabase.rpc("record_answer", {
       p_question_id: question.id,
       p_is_correct: correct,
       p_mode: isPractice ? "practice" : "fresh",
-      p_served_reason: isPractice ? "practice" : "random",
+      p_served_reason: servedReasonRef.current,
       p_session_pos: questionCount + 1,
     });
   };
@@ -255,7 +353,11 @@ function QuizContent() {
     setCorrectCount(0);
     setStreak(0);
     queueRef.current = [];
+    reserveRef.current = [];
     seenIdsRef.current.clear();
+    missRunRef.current = 0;
+    breakerArmRef.current = null;
+    breakerServedRef.current = 0;
     showNextFromQueue(true);
   };
 
