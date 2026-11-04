@@ -11,6 +11,8 @@ interface CategoryStat {
   total_questions: number;
   answered: number;
   correct: number;
+  // Questions due for a spaced-repetition review (absent before migration 022)
+  due_reviews?: number;
 }
 
 interface DailyChallengeStatus {
@@ -375,6 +377,13 @@ export default function LobbyPage() {
                     {mode === "new" && stat.answered > 0 && (
                       <div className="text-[11px] text-[var(--muted)] mt-1.5">
                         {accuracy}% tačnost
+                        {/* Finished categories serve due reviews only */}
+                        {isComplete && Number(stat.due_reviews ?? 0) > 0 && (
+                          <span className="text-[var(--accent-text)]">
+                            {" "}
+                            · 🔁 {stat.due_reviews} za ponavljanje
+                          </span>
+                        )}
                       </div>
                     )}
                   </button>
