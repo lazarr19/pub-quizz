@@ -21,6 +21,8 @@ interface Question {
   difficulty_score?: number | null;
   served_reason?: string;
   is_reserve?: boolean;
+  // "review" = answered before, served again by the spaced-repetition schedule
+  kind?: "fresh" | "review";
 }
 
 type ServedReason =
@@ -28,7 +30,20 @@ type ServedReason =
   | "onboarding"
   | "breaker"
   | "breaker_withheld"
+  | "review_due"
+  | "soft_reset"
   | "practice";
+
+interface CategoryStat {
+  category_id: string;
+  category_name: string;
+  total_questions: number;
+  answered: number;
+  correct: number;
+}
+
+// Reasons the server assigns to ordinary (non-reserve) batch rows.
+const QUEUE_REASONS: ServedReason[] = ["onboarding", "review_due", "soft_reset"];
 
 // Miss-streak circuit breaker: after BREAKER_TRIGGER consecutive misses the next
 // question comes from the easy reserve, at most BREAKER_MAX_PER_RUN times until
@@ -56,6 +71,10 @@ function QuizContent() {
   const [showStreak30, setShowStreak30] = useState(false);
   const [bestStreak, setBestStreak] = useState(0);
   const [showSessionReport, setShowSessionReport] = useState(false);
+  const [nextSteps, setNextSteps] = useState<{
+    mistakes: number;
+    suggestion: { id: string; name: string; remaining: number } | null;
+  }>({ mistakes: 0, suggestion: null });
   const queueRef = useRef<Question[]>([]);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -198,7 +217,7 @@ function QuizContent() {
           if (queueRef.current.length === 0 && reserveRef.current.length > 0) {
             queueRef.current = reserveRef.current.splice(0).map((q) => ({
               ...q,
-              served_reason: "random",
+              served_reason: q.kind === "review" ? "review_due" : "random",
               is_reserve: false,
             }));
           }
@@ -213,8 +232,8 @@ function QuizContent() {
           next = queueRef.current.shift()!;
           reason = isPractice
             ? "practice"
-            : next.served_reason === "onboarding"
-              ? "onboarding"
+            : QUEUE_REASONS.includes(next.served_reason as ServedReason)
+              ? (next.served_reason as ServedReason)
               : "random";
           if (breakerTurn && breakerArmRef.current === "withheld") {
             reason = "breaker_withheld";
@@ -247,6 +266,48 @@ function QuizContent() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // "Kategorija završena" next steps: mistakes left to practise in these
+  // categories, and the other category with the most unseen questions left.
+  useEffect(() => {
+    if (!allComplete || isPractice) return;
+    let cancelled = false;
+    (async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase.rpc("get_player_stats", {
+        p_user_id: user.id,
+      });
+      if (cancelled || !data) return;
+      const rows = data as CategoryStat[];
+      const selected = new Set(categoryIds);
+      const mistakes = rows
+        .filter((r) => selected.has(r.category_id))
+        .reduce((sum, r) => sum + Number(r.answered) - Number(r.correct), 0);
+      const suggestion =
+        rows
+          .filter((r) => !selected.has(r.category_id))
+          .map((r) => ({
+            id: r.category_id,
+            name: r.category_name,
+            remaining: Number(r.total_questions) - Number(r.answered),
+            share:
+              Number(r.total_questions) > 0
+                ? 1 - Number(r.answered) / Number(r.total_questions)
+                : 0,
+          }))
+          .filter((r) => r.remaining > 0)
+          .sort((a, b) => b.share - a.share || b.remaining - a.remaining)[0] ??
+        null;
+      setNextSteps({ mistakes, suggestion });
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allComplete]);
 
   const handleAnswer = async (option: number) => {
     if (answered || !question) return;
@@ -328,7 +389,11 @@ function QuizContent() {
     await supabase.rpc("record_answer", {
       p_question_id: question.id,
       p_is_correct: correct,
-      p_mode: isPractice ? "practice" : "fresh",
+      p_mode: isPractice
+        ? "practice"
+        : question.kind === "review"
+          ? "review"
+          : "fresh",
       p_served_reason: servedReasonRef.current,
       p_session_pos: questionCount + 1,
     });
@@ -553,7 +618,7 @@ function QuizContent() {
           <p className="text-[var(--muted)] mb-2">
             {isPractice
               ? "Ispravili ste sve greške u izabranim kategorijama."
-              : "Odgovorili ste na sva pitanja u izabranim kategorijama."}
+              : "Odgovorili ste na sva pitanja u izabranim kategorijama. Pitanja za ponavljanje stižu vremenom."}
           </p>
           {questionCount > 0 && (
             <p className="text-sm text-[var(--muted)] mb-6">
@@ -562,12 +627,41 @@ function QuizContent() {
             </p>
           )}
           <div className="space-y-3 w-full max-w-xs">
+            {!isPractice && nextSteps.suggestion && (
+              <button
+                onClick={() =>
+                  // Hard navigation: this page reads its categories once on mount.
+                  window.location.assign(
+                    `/quiz?categories=${nextSteps.suggestion!.id}`,
+                  )
+                }
+                className="w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold rounded-xl px-4 py-3 text-sm transition-colors"
+              >
+                Probaj: {nextSteps.suggestion.name} (
+                {nextSteps.suggestion.remaining} novih)
+              </button>
+            )}
+            {!isPractice && nextSteps.mistakes > 0 && (
+              <button
+                onClick={() =>
+                  window.location.assign(
+                    `/quiz?categories=${categoryIds.join(",")}&mode=mistakes`,
+                  )
+                }
+                className="w-full bg-[var(--card)] hover:bg-[var(--card-hover)] border border-[var(--border)] text-white font-semibold rounded-xl px-4 py-3 text-sm transition-colors"
+              >
+                Vežbaj greške ({nextSteps.mistakes})
+              </button>
+            )}
             {!isPractice && (
               <button
                 onClick={handleReset}
-                className="w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold rounded-xl px-4 py-3 text-sm transition-colors"
+                className="w-full bg-[var(--card)] hover:bg-[var(--card-hover)] border border-[var(--border)] text-white font-semibold rounded-xl px-4 py-3 text-sm transition-colors"
               >
-                Resetuj i ponovi sve
+                Ponovi sva pitanja
+                <span className="block text-xs font-normal text-[var(--muted)]">
+                  Statistika ostaje sačuvana
+                </span>
               </button>
             )}
             <button
@@ -614,6 +708,7 @@ function QuizContent() {
             selectedOption={selectedOption}
             answered={answered}
             onAnswer={handleAnswer}
+            badge={question.kind === "review" ? "Ponavljanje" : undefined}
           />
 
           {answered && (

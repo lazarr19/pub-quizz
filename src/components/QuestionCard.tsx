@@ -30,6 +30,8 @@ interface QuestionCardProps {
   selectedOption: number | null;
   answered: boolean;
   onAnswer: (option: number) => void;
+  // Small label above the question, e.g. "Ponavljanje" for review questions
+  badge?: string;
 }
 
 export default function QuestionCard({
@@ -37,6 +39,7 @@ export default function QuestionCard({
   selectedOption,
   answered,
   onAnswer,
+  badge,
 }: QuestionCardProps) {
   const [showReport, setShowReport] = useState(false);
   const [reportReason, setReportReason] = useState("");
@@ -100,6 +103,11 @@ export default function QuestionCard({
     <div className="bg-[var(--card)] rounded-2xl border border-[var(--border)] overflow-hidden">
       {/* Question content */}
       <div className="p-5">
+        {badge && (
+          <span className="inline-flex items-center gap-1 mb-3 rounded-full border border-[var(--accent)]/40 bg-[var(--accent)]/10 px-2.5 py-0.5 text-xs font-medium text-[var(--accent)]">
+            🔁 {badge}
+          </span>
+        )}
         {question.type === "image" && question.image_url && (
           <div className="relative w-full aspect-video rounded-xl overflow-hidden mb-4 bg-[var(--background)]">
             <Image
