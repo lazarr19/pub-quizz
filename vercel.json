@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/refresh-question-stats",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/calibrate-question-ratings",
+      "schedule": "0 2 1 * *"
     }
   ]
 }

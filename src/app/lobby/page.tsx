@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import AppShell from "@/components/AppShell";
+import RatingCard from "@/components/RatingCard";
+import { RatingInfo } from "@/lib/rating";
 
 interface CategoryStat {
   category_id: string;
@@ -29,6 +31,7 @@ export default function LobbyPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [mode, setMode] = useState<"new" | "mistakes">("new");
   const [loading, setLoading] = useState(true);
+  const [rating, setRating] = useState<RatingInfo | null>(null);
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
 
@@ -44,15 +47,24 @@ export default function LobbyPage() {
     if (!session?.user) return;
     const user = session.user;
 
-    const [{ data, error }, { data: daily }, { data: dailyStreak }] =
-      await Promise.all([
-        supabase.rpc("get_player_stats", { p_user_id: user.id }),
-        supabase.rpc("get_daily_challenge", { p_user_id: user.id }),
-        supabase.rpc("get_daily_challenge_streak", { p_user_id: user.id }),
-      ]);
+    const [
+      { data, error },
+      { data: daily },
+      { data: dailyStreak },
+      { data: ratingData },
+    ] = await Promise.all([
+      supabase.rpc("get_player_stats", { p_user_id: user.id }),
+      supabase.rpc("get_daily_challenge", { p_user_id: user.id }),
+      supabase.rpc("get_daily_challenge_streak", { p_user_id: user.id }),
+      supabase.rpc("get_my_rating", { p_history_days: 0 }),
+    ]);
 
     if (!error && data) {
       setStats(data);
+    }
+    // Absent until migration 026 is applied; the card simply doesn't render.
+    if (ratingData) {
+      setRating(ratingData as RatingInfo);
     }
     if (daily) {
       const responses = daily.responses as { is_correct: boolean }[];
@@ -169,6 +181,11 @@ export default function LobbyPage() {
         </div>
       ) : (
         <div className="space-y-6">
+          {/* Player rating */}
+          {rating && (
+            <RatingCard info={rating} onClick={() => router.push("/stats")} />
+          )}
+
           {/* Daily Challenge Card */}
           {dailyStatus && (
             <button

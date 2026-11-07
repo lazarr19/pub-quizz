@@ -6,6 +6,15 @@ import { useRouter, useSearchParams } from "next/navigation";
 import AppShell from "@/components/AppShell";
 import QuestionCard from "@/components/QuestionCard";
 import confetti from "canvas-confetti";
+import {
+  PLACEMENT_ANSWERS,
+  RatingInfo,
+  TIERS,
+  formatSigned,
+  isPlacement,
+  tierIndex,
+  tierProgress,
+} from "@/lib/rating";
 
 interface Question {
   id: string;
@@ -71,6 +80,12 @@ function QuizContent() {
   const [showStreak30, setShowStreak30] = useState(false);
   const [bestStreak, setBestStreak] = useState(0);
   const [showSessionReport, setShowSessionReport] = useState(false);
+  // Player rating: current value, value at session start, milestone toast.
+  const [rating, setRating] = useState<RatingInfo | null>(null);
+  const [ratingToast, setRatingToast] = useState<string | null>(null);
+  const ratingRef = useRef<RatingInfo | null>(null);
+  const sessionStartShownRef = useRef<number | null>(null);
+  const hardestCorrectRef = useRef<number | null>(null);
   const [nextSteps, setNextSteps] = useState<{
     mistakes: number;
     suggestion: { id: string; name: string; remaining: number } | null;
@@ -271,6 +286,27 @@ function QuizContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Rating at session start (header chip + session summary). Missing until
+  // migration 026 is applied; the chip then simply doesn't render.
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.rpc("get_my_rating", {
+        p_history_days: 0,
+      });
+      if (!data) return;
+      const info = data as RatingInfo;
+      // Don't clobber a value already updated by a fast first answer.
+      if (!ratingRef.current) {
+        ratingRef.current = info;
+        setRating(info);
+      }
+      if (sessionStartShownRef.current === null) {
+        sessionStartShownRef.current = info.shown;
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // "Kategorija završena" next steps: mistakes left to practise in these
   // categories, and the other category with the most unseen questions left.
   useEffect(() => {
@@ -388,9 +424,21 @@ function QuizContent() {
       }
     }
 
-    // Single write path: stores the answer (or resolves a practice mistake) and
-    // logs it to answer_events. Wrong practice answers are logged too now.
-    await supabase.rpc("record_answer", {
+    // Hardest question answered correctly this session (for the summary).
+    if (
+      correct &&
+      typeof question.difficulty_score === "number" &&
+      (hardestCorrectRef.current === null ||
+        question.difficulty_score < hardestCorrectRef.current)
+    ) {
+      hardestCorrectRef.current = question.difficulty_score;
+    }
+
+    // Single write path: stores the answer (or resolves a practice mistake),
+    // logs it to answer_events, and updates the rating. The server decides
+    // correctness from the selected option; p_is_correct is only used by old
+    // clients that don't send it.
+    const { data: result } = await supabase.rpc("record_answer", {
       p_question_id: question.id,
       p_is_correct: correct,
       p_mode: isPractice
@@ -400,7 +448,47 @@ function QuizContent() {
           : "fresh",
       p_served_reason: servedReasonRef.current,
       p_session_pos: questionCount + 1,
+      p_selected_option: option,
     });
+
+    const r = result as {
+      rated?: boolean;
+      shown?: number;
+      rated_answers?: number;
+      peak_shown?: number;
+    } | null;
+    if (r?.rated && r.shown != null && r.rated_answers != null) {
+      const prev = ratingRef.current;
+      const next: RatingInfo = {
+        ...prev,
+        shown: r.shown,
+        rated_answers: r.rated_answers,
+        peak_shown: r.peak_shown ?? r.shown,
+      };
+      ratingRef.current = next;
+      setRating(next);
+      if (prev) announceRatingMilestone(prev, next);
+    }
+  };
+
+  // Placement reveal at the 30th rated answer; afterwards, a toast whenever the
+  // peak rating crosses into a new tier.
+  const announceRatingMilestone = (prev: RatingInfo, next: RatingInfo) => {
+    let message: string | null = null;
+    if (isPlacement(prev) && !isPlacement(next)) {
+      const t = TIERS[tierIndex(next.peak_shown)];
+      message = `Tvoj nivo: ${t.emoji} ${t.name}`;
+    } else if (
+      !isPlacement(next) &&
+      tierIndex(next.peak_shown) > tierIndex(prev.peak_shown)
+    ) {
+      const t = TIERS[tierIndex(next.peak_shown)];
+      message = `Novi nivo: ${t.emoji} ${t.name}`;
+    }
+    if (!message) return;
+    setRatingToast(message);
+    setTimeout(() => setRatingToast(null), 2800);
+    confetti({ particleCount: 140, spread: 90, origin: { y: 0.6 } });
   };
 
   const handleNext = () => {
@@ -427,6 +515,9 @@ function QuizContent() {
     missRunRef.current = 0;
     breakerArmRef.current = null;
     breakerServedRef.current = 0;
+    // The session restarts: so does its rating summary.
+    sessionStartShownRef.current = ratingRef.current?.shown ?? null;
+    hardestCorrectRef.current = null;
     showNextFromQueue(true);
   };
 
@@ -551,6 +642,80 @@ function QuizContent() {
                 <div className="text-sm text-[var(--muted)] mb-5">
                   {correctCount} tačno / {total - correctCount} netačno
                 </div>
+                {rating &&
+                  (() => {
+                    const start = sessionStartShownRef.current;
+                    const delta =
+                      start !== null ? rating.shown - start : null;
+                    const { tier, next, missing, fraction } =
+                      tierProgress(rating);
+                    const hardest = hardestCorrectRef.current;
+                    return (
+                      <div className="bg-[var(--bg)] rounded-xl p-4 mb-5 text-left">
+                        {isPlacement(rating) ? (
+                          <div className="text-sm">
+                            📊 Procena nivoa:{" "}
+                            <span className="font-semibold tabular-nums">
+                              {rating.rated_answers}/{PLACEMENT_ANSWERS}
+                            </span>{" "}
+                            novih pitanja
+                          </div>
+                        ) : (
+                          <>
+                            <div className="flex items-center justify-between text-sm">
+                              <span>
+                                {tier.emoji} {tier.name}
+                              </span>
+                              <span className="tabular-nums">
+                                Rejting{" "}
+                                {start !== null && start !== rating.shown && (
+                                  <>
+                                    {start} →{" "}
+                                  </>
+                                )}
+                                <span className="font-semibold">
+                                  {rating.shown}
+                                </span>
+                                {delta !== null && delta !== 0 && (
+                                  <span
+                                    className={
+                                      delta > 0
+                                        ? "text-[var(--success)]"
+                                        : "text-[var(--muted)]"
+                                    }
+                                  >
+                                    {" "}
+                                    ({formatSigned(delta)})
+                                  </span>
+                                )}
+                              </span>
+                            </div>
+                            {next && (
+                              <>
+                                <div className="mt-2 h-1.5 bg-[var(--background)] rounded-full overflow-hidden">
+                                  <div
+                                    className="h-full bg-[var(--accent)] rounded-full"
+                                    style={{ width: `${fraction * 100}%` }}
+                                  />
+                                </div>
+                                <div className="text-xs text-[var(--muted)] mt-1.5">
+                                  {missing > 0
+                                    ? `Još ${missing} do nivoa ${next.emoji} ${next.name}`
+                                    : `Na korak od nivoa ${next.emoji} ${next.name}`}
+                                </div>
+                              </>
+                            )}
+                          </>
+                        )}
+                        {hardest !== null && hardest < 0.6 && (
+                          <div className="text-xs text-[var(--muted)] mt-2">
+                            💡 Najteže tačno: pitanje na koje tačno odgovori
+                            samo {Math.round(hardest * 100)}% igrača
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 <div className="space-y-2">
                   <button
                     onClick={() => router.push("/lobby")}
@@ -569,6 +734,16 @@ function QuizContent() {
             </div>
           );
         })()}
+      {ratingToast && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+          <div className="bg-[var(--accent)] text-white rounded-2xl px-8 py-5 text-center shadow-2xl">
+            <div className="text-sm opacity-90 mb-1">Rejting</div>
+            <div className="text-2xl font-bold tracking-wide">
+              {ratingToast}
+            </div>
+          </div>
+        </div>
+      )}
       {showStreak30 && (
         <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
           <div className="bg-gradient-to-br from-purple-600 to-pink-500 text-white rounded-2xl px-8 py-4 text-center shadow-xl">
@@ -686,6 +861,16 @@ function QuizContent() {
           <div className="flex items-center justify-between text-sm text-[var(--muted)]">
             <span>Pitanje #{questionCount + (answered ? 0 : 1)}</span>
             <div className="flex items-center gap-3">
+              {rating && (
+                <span
+                  title="Rejting"
+                  className="tabular-nums font-semibold text-[var(--accent-text)]"
+                >
+                  {isPlacement(rating)
+                    ? `📊 ${rating.rated_answers}/${PLACEMENT_ANSWERS}`
+                    : `⭐ ${rating.shown}`}
+                </span>
+              )}
               {streak >= 2 && (
                 <span
                   className={`font-semibold transition-all ${streak >= 10 ? "text-yellow-400 text-base scale-110 inline-block" : "text-orange-400"}`}

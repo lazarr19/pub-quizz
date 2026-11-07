@@ -3,6 +3,11 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import AppShell from "@/components/AppShell";
+import RatingCard from "@/components/RatingCard";
+import RatingChart from "@/components/RatingChart";
+import { RatingInfo, isPlacement } from "@/lib/rating";
+
+const HISTORY_DAYS = 90;
 
 interface CategoryStat {
   category_id: string;
@@ -15,6 +20,7 @@ interface CategoryStat {
 export default function StatsPage() {
   const [stats, setStats] = useState<CategoryStat[]>([]);
   const [loading, setLoading] = useState(true);
+  const [rating, setRating] = useState<RatingInfo | null>(null);
   const supabase = createClient();
 
   useEffect(() => {
@@ -28,11 +34,13 @@ export default function StatsPage() {
     } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { data } = await supabase.rpc("get_player_stats", {
-      p_user_id: user.id,
-    });
+    const [{ data }, { data: ratingData }] = await Promise.all([
+      supabase.rpc("get_player_stats", { p_user_id: user.id }),
+      supabase.rpc("get_my_rating", { p_history_days: HISTORY_DAYS }),
+    ]);
 
     if (data) setStats(data);
+    if (ratingData) setRating(ratingData as RatingInfo);
     setLoading(false);
   };
 
@@ -82,6 +90,30 @@ export default function StatsPage() {
       ) : (
         <div className="space-y-6">
           <h2 className="text-xl font-bold">Vaša statistika</h2>
+
+          {/* Rating: current tier + history */}
+          {rating && (
+            <div className="space-y-3">
+              <RatingCard info={rating} />
+              {!isPlacement(rating) && (
+                <div className="bg-[var(--card)] rounded-2xl p-4 border border-[var(--border)]">
+                  <h3 className="text-sm font-medium text-[var(--muted)] mb-2">
+                    Rejting - poslednjih {HISTORY_DAYS} dana
+                  </h3>
+                  <RatingChart
+                    history={rating.history ?? []}
+                    historyStart={rating.history_start}
+                    days={HISTORY_DAYS}
+                  />
+                </div>
+              )}
+              <p className="text-[11px] text-[var(--muted)] px-1">
+                Rejting raste kada tačno odgovorite na teža pitanja. Računa se
+                samo prvi odgovor na svako pitanje - ponavljanja i vežbanje
+                grešaka ga ne menjaju.
+              </p>
+            </div>
+          )}
 
           {/* Overall */}
           <div className="bg-[var(--card)] rounded-2xl p-5 border border-[var(--border)]">
