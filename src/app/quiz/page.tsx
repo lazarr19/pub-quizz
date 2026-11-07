@@ -59,6 +59,16 @@ const QUEUE_REASONS: ServedReason[] = ["onboarding", "review_due", "soft_reset"]
 // the next correct answer. Each miss run is randomly held out with probability
 // BREAKER_HOLDOUT (served as normal, logged as breaker_withheld) so the effect on
 // session continuation can be measured against a concurrent control.
+// Fisher-Yates, returns a new array.
+function shuffle<T>(items: T[]): T[] {
+  const out = [...items];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
 const BREAKER_TRIGGER = 2;
 const BREAKER_MAX_PER_RUN = 2;
 const BREAKER_HOLDOUT = 0.2;
@@ -157,7 +167,10 @@ function QuizContent() {
         0,
         RESERVE_CAP,
       );
-      return rows.filter((q) => !q.is_reserve);
+      // get_question_batch returns its review rows before its fresh rows; with
+      // a 25-question batch that served every review back to back (e.g. 5
+      // repeats, then only new questions). Shuffle so they're mixed in.
+      return shuffle(rows.filter((q) => !q.is_reserve));
     }
     return [];
     // eslint-disable-next-line react-hooks/exhaustive-deps
