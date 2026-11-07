@@ -100,6 +100,28 @@ export default function DailyChallengePage() {
     setIsCorrect(correct);
     setAnswered(true);
 
+    // Record the response locally right away, with a functional update, BEFORE
+    // any network call. Doing it after the awaited insert from a stale `data`
+    // closure let a slow connection overwrite or delay earlier responses, and
+    // handleNext then fell back to an already-answered question (a repeat).
+    // Do NOT touch currentQuestion here - that only advances in handleNext.
+    const questionId = currentQuestion.id;
+    setData((prev) =>
+      prev && !prev.responses.some((r) => r.question_id === questionId)
+        ? {
+            ...prev,
+            responses: [
+              ...prev.responses,
+              {
+                question_id: questionId,
+                selected_option: option,
+                is_correct: correct,
+              },
+            ],
+          }
+        : prev,
+    );
+
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -108,33 +130,26 @@ export default function DailyChallengePage() {
     await supabase.from("daily_challenge_responses").insert({
       user_id: user.id,
       challenge_date: data.challenge_date,
-      question_id: currentQuestion.id,
+      question_id: questionId,
       selected_option: option,
       is_correct: correct,
-    });
-
-    // Record the response (for the score counter and end-of-run review),
-    // but do NOT touch currentQuestion here - that only advances in handleNext.
-    setData({
-      ...data,
-      responses: [
-        ...data.responses,
-        {
-          question_id: currentQuestion.id,
-          selected_option: option,
-          is_correct: correct,
-        },
-      ],
     });
   };
 
   const handleNext = () => {
     if (!data || !currentQuestion) return;
+    // Forward-only: look for the next unanswered question AFTER the current
+    // position, so navigation can never jump back to an earlier question.
     const answeredIds = new Set(
       data.responses.map((r) => r.question_id),
     ).add(currentQuestion.id);
+    const currentIndex = data.questions.findIndex(
+      (q) => q.id === currentQuestion.id,
+    );
     const next =
-      data.questions.find((q) => !answeredIds.has(q.id)) ?? null;
+      data.questions
+        .slice(currentIndex + 1)
+        .find((q) => !answeredIds.has(q.id)) ?? null;
     setCurrentQuestion(next);
     setAnswered(false);
     setSelectedOption(null);
