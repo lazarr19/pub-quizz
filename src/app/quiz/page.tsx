@@ -7,14 +7,12 @@ import AppShell from "@/components/AppShell";
 import QuestionCard from "@/components/QuestionCard";
 import confetti from "canvas-confetti";
 import {
-  PLACEMENT_ANSWERS,
-  RatingInfo,
-  TIERS,
-  formatSigned,
-  isPlacement,
-  tierIndex,
-  tierProgress,
-} from "@/lib/rating";
+  ProgressInfo,
+  formatXp,
+  levelFraction,
+  titleFor,
+  withXp,
+} from "@/lib/progress";
 
 interface Question {
   id: string;
@@ -59,6 +57,20 @@ const QUEUE_REASONS: ServedReason[] = ["onboarding", "review_due", "soft_reset"]
 // the next correct answer. Each miss run is randomly held out with probability
 // BREAKER_HOLDOUT (served as normal, logged as breaker_withheld) so the effect on
 // session continuation can be measured against a concurrent control.
+// "sutra", "za 3 dana", or "danas u 18:30" for the next repeat.
+function formatDue(iso: string): string {
+  const due = new Date(iso);
+  const now = new Date();
+  const day = (d: Date) => d.toLocaleDateString("sv-SE", { timeZone: "Europe/Belgrade" });
+  const days = Math.round(
+    (new Date(day(due)).getTime() - new Date(day(now)).getTime()) / 86400000,
+  );
+  if (days <= 0)
+    return `danas u ${due.toLocaleTimeString("sr-Latn-RS", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Belgrade" })}`;
+  if (days === 1) return "sutra";
+  return `za ${days} dana`;
+}
+
 // Fisher-Yates, returns a new array.
 function shuffle<T>(items: T[]): T[] {
   const out = [...items];
@@ -90,11 +102,18 @@ function QuizContent() {
   const [showStreak30, setShowStreak30] = useState(false);
   const [bestStreak, setBestStreak] = useState(0);
   const [showSessionReport, setShowSessionReport] = useState(false);
-  // Player rating: current value, value at session start, milestone toast.
-  const [rating, setRating] = useState<RatingInfo | null>(null);
-  const [ratingToast, setRatingToast] = useState<string | null>(null);
-  const ratingRef = useRef<RatingInfo | null>(null);
-  const sessionStartShownRef = useRef<number | null>(null);
+  // Progress: level/XP, XP and learned questions this session, level-up toast.
+  const [progress, setProgress] = useState<ProgressInfo | null>(null);
+  const [levelToast, setLevelToast] = useState<string | null>(null);
+  const [sessionXp, setSessionXp] = useState(0);
+  const [sessionLearned, setSessionLearned] = useState(0);
+  const [answerXp, setAnswerXp] = useState<{
+    questionId: string;
+    xp: number;
+    learned: boolean;
+  } | null>(null);
+  const [nextReviewDue, setNextReviewDue] = useState<string | null>(null);
+  const progressRef = useRef<ProgressInfo | null>(null);
   const hardestCorrectRef = useRef<number | null>(null);
   const [nextSteps, setNextSteps] = useState<{
     mistakes: number;
@@ -113,6 +132,8 @@ function QuizContent() {
   const PREFETCH_THRESHOLD = 2;
   const categoryIds = searchParams.get("categories")?.split(",") || [];
   const isPractice = searchParams.get("mode") === "mistakes";
+  // Ponavljanje: only repeats that are due (spaced repetition).
+  const isReview = searchParams.get("mode") === "review";
   const seenIdsRef = useRef<Set<string>>(new Set());
   // Holds the in-flight prefetch promise (not just a boolean) so a caller
   // that finds the queue empty can await the SAME request instead of firing
@@ -146,12 +167,18 @@ function QuizContent() {
           p_limit: BATCH_SIZE,
           p_exclude_ids: exclude,
         })
-      : await supabase.rpc("get_question_batch", {
-          p_category_ids: categoryIds,
-          p_limit: BATCH_SIZE,
-          p_exclude_ids: exclude,
-          p_reserve: RESERVE_PER_BATCH,
-        });
+      : isReview
+        ? await supabase.rpc("get_review_batch", {
+            p_category_ids: categoryIds,
+            p_limit: BATCH_SIZE,
+            p_exclude_ids: exclude,
+          })
+        : await supabase.rpc("get_question_batch", {
+            p_category_ids: categoryIds,
+            p_limit: BATCH_SIZE,
+            p_exclude_ids: exclude,
+            p_reserve: RESERVE_PER_BATCH,
+          });
 
     if (error) {
       throw new Error(error.message);
@@ -211,6 +238,7 @@ function QuizContent() {
       try {
         setAnswered(false);
         setSelectedOption(null);
+        setAnswerXp(null);
         setFetchError(false);
 
         if (forceRefetch) {
@@ -229,6 +257,7 @@ function QuizContent() {
 
         const breakerTurn =
           !isPractice &&
+          !isReview &&
           breakerArmRef.current !== null &&
           missRunRef.current >= BREAKER_TRIGGER &&
           breakerServedRef.current < BREAKER_MAX_PER_RUN;
@@ -299,31 +328,39 @@ function QuizContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Rating at session start (header chip + session summary). Missing until
-  // migration 026 is applied; the chip then simply doesn't render.
+  // Level / XP at session start (header chip, level-up detection). Missing
+  // until migration 027 is applied; the chip then simply doesn't render.
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.rpc("get_my_rating", {
+      const { data } = await supabase.rpc("get_my_progress", {
         p_history_days: 0,
       });
       if (!data) return;
-      const info = data as RatingInfo;
       // Don't clobber a value already updated by a fast first answer.
-      if (!ratingRef.current) {
-        ratingRef.current = info;
-        setRating(info);
-      }
-      if (sessionStartShownRef.current === null) {
-        sessionStartShownRef.current = info.shown;
+      if (!progressRef.current) {
+        progressRef.current = data as ProgressInfo;
+        setProgress(data as ProgressInfo);
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Ponavljanje finished: when do the next repeats arrive?
+  useEffect(() => {
+    if (!allComplete || !isReview) return;
+    (async () => {
+      const { data } = await supabase.rpc("get_next_review_due", {
+        p_category_ids: categoryIds,
+      });
+      setNextReviewDue((data as string | null) ?? null);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allComplete]);
+
   // "Kategorija završena" next steps: mistakes left to practise in these
   // categories, and the other category with the most unseen questions left.
   useEffect(() => {
-    if (!allComplete || isPractice) return;
+    if (!allComplete || isPractice || isReview) return;
     let cancelled = false;
     (async () => {
       const {
@@ -448,7 +485,7 @@ function QuizContent() {
     }
 
     // Single write path: stores the answer (or resolves a practice mistake),
-    // logs it to answer_events, and updates the rating. The server decides
+    // logs it to answer_events, and awards XP. The server decides
     // correctness from the selected option; p_is_correct is only used by old
     // clients that don't send it.
     const { data: result } = await supabase.rpc("record_answer", {
@@ -465,42 +502,29 @@ function QuizContent() {
     });
 
     const r = result as {
-      rated?: boolean;
-      shown?: number;
-      rated_answers?: number;
-      peak_shown?: number;
+      xp?: number;
+      learned?: boolean;
+      total_xp?: number;
     } | null;
-    if (r?.rated && r.shown != null && r.rated_answers != null) {
-      const prev = ratingRef.current;
-      const next: RatingInfo = {
-        ...prev,
-        shown: r.shown,
-        rated_answers: r.rated_answers,
-        peak_shown: r.peak_shown ?? r.shown,
-      };
-      ratingRef.current = next;
-      setRating(next);
-      if (prev) announceRatingMilestone(prev, next);
+    if (r && typeof r.xp === "number") {
+      setAnswerXp({ questionId: question.id, xp: r.xp, learned: !!r.learned });
+      setSessionXp((x) => x + (r.xp ?? 0));
+      if (r.learned) setSessionLearned((n) => n + 1);
+      const prev = progressRef.current;
+      if (prev && typeof r.total_xp === "number") {
+        const next = withXp(prev, r.total_xp);
+        if (r.learned) next.learned = prev.learned + 1;
+        progressRef.current = next;
+        setProgress(next);
+        if (next.level > prev.level) announceLevelUp(next.level);
+      }
     }
   };
 
-  // Placement reveal at the 30th rated answer; afterwards, a toast whenever the
-  // peak rating crosses into a new tier.
-  const announceRatingMilestone = (prev: RatingInfo, next: RatingInfo) => {
-    let message: string | null = null;
-    if (isPlacement(prev) && !isPlacement(next)) {
-      const t = TIERS[tierIndex(next.peak_shown)];
-      message = `Tvoj nivo: ${t.emoji} ${t.name}`;
-    } else if (
-      !isPlacement(next) &&
-      tierIndex(next.peak_shown) > tierIndex(prev.peak_shown)
-    ) {
-      const t = TIERS[tierIndex(next.peak_shown)];
-      message = `Novi nivo: ${t.emoji} ${t.name}`;
-    }
-    if (!message) return;
-    setRatingToast(message);
-    setTimeout(() => setRatingToast(null), 2800);
+  const announceLevelUp = (level: number) => {
+    const t = titleFor(level);
+    setLevelToast(`Nivo ${level}${t.minLevel === level ? ` · ${t.emoji} ${t.name}` : ""}`);
+    setTimeout(() => setLevelToast(null), 2800);
     confetti({ particleCount: 140, spread: 90, origin: { y: 0.6 } });
   };
 
@@ -528,8 +552,9 @@ function QuizContent() {
     missRunRef.current = 0;
     breakerArmRef.current = null;
     breakerServedRef.current = 0;
-    // The session restarts: so does its rating summary.
-    sessionStartShownRef.current = ratingRef.current?.shown ?? null;
+    // The session restarts: so does its summary.
+    setSessionXp(0);
+    setSessionLearned(0);
     hardestCorrectRef.current = null;
     showNextFromQueue(true);
   };
@@ -655,70 +680,35 @@ function QuizContent() {
                 <div className="text-sm text-[var(--muted)] mb-5">
                   {correctCount} tačno / {total - correctCount} netačno
                 </div>
-                {rating &&
+                {progress &&
                   (() => {
-                    const start = sessionStartShownRef.current;
-                    const delta =
-                      start !== null ? rating.shown - start : null;
-                    const { tier, next, missing, fraction } =
-                      tierProgress(rating);
+                    const title = titleFor(progress.level);
+                    const toNext = Math.max(0, progress.next_level_xp - progress.xp);
                     const hardest = hardestCorrectRef.current;
                     return (
                       <div className="bg-[var(--bg)] rounded-xl p-4 mb-5 text-left">
-                        {isPlacement(rating) ? (
-                          <div className="text-sm">
-                            📊 Procena nivoa:{" "}
-                            <span className="font-semibold tabular-nums">
-                              {rating.rated_answers}/{PLACEMENT_ANSWERS}
-                            </span>{" "}
-                            novih pitanja
+                        <div className="flex items-center justify-between text-sm">
+                          <span>
+                            {title.emoji} Nivo {progress.level}
+                          </span>
+                          <span className="tabular-nums font-semibold text-[var(--success)]">
+                            +{formatXp(sessionXp)} XP
+                          </span>
+                        </div>
+                        <div className="mt-2 h-1.5 bg-[var(--background)] rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-[var(--accent)] rounded-full"
+                            style={{ width: `${levelFraction(progress) * 100}%` }}
+                          />
+                        </div>
+                        <div className="text-xs text-[var(--muted)] mt-1.5">
+                          Još {formatXp(toNext)} XP do nivoa {progress.level + 1}
+                        </div>
+                        {sessionLearned > 0 && (
+                          <div className="text-xs mt-2">
+                            📘 Naučeno ove sesije:{" "}
+                            <span className="font-semibold">{sessionLearned}</span>
                           </div>
-                        ) : (
-                          <>
-                            <div className="flex items-center justify-between text-sm">
-                              <span>
-                                {tier.emoji} {tier.name}
-                              </span>
-                              <span className="tabular-nums">
-                                Rejting{" "}
-                                {start !== null && start !== rating.shown && (
-                                  <>
-                                    {start} →{" "}
-                                  </>
-                                )}
-                                <span className="font-semibold">
-                                  {rating.shown}
-                                </span>
-                                {delta !== null && delta !== 0 && (
-                                  <span
-                                    className={
-                                      delta > 0
-                                        ? "text-[var(--success)]"
-                                        : "text-[var(--muted)]"
-                                    }
-                                  >
-                                    {" "}
-                                    ({formatSigned(delta)})
-                                  </span>
-                                )}
-                              </span>
-                            </div>
-                            {next && (
-                              <>
-                                <div className="mt-2 h-1.5 bg-[var(--background)] rounded-full overflow-hidden">
-                                  <div
-                                    className="h-full bg-[var(--accent)] rounded-full"
-                                    style={{ width: `${fraction * 100}%` }}
-                                  />
-                                </div>
-                                <div className="text-xs text-[var(--muted)] mt-1.5">
-                                  {missing > 0
-                                    ? `Još ${missing} do nivoa ${next.emoji} ${next.name}`
-                                    : `Na korak od nivoa ${next.emoji} ${next.name}`}
-                                </div>
-                              </>
-                            )}
-                          </>
                         )}
                         {hardest !== null && hardest < 0.6 && (
                           <div className="text-xs text-[var(--muted)] mt-2">
@@ -747,12 +737,12 @@ function QuizContent() {
             </div>
           );
         })()}
-      {ratingToast && (
+      {levelToast && (
         <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
           <div className="bg-[var(--accent)] text-white rounded-2xl px-8 py-5 text-center shadow-2xl">
-            <div className="text-sm opacity-90 mb-1">Rejting</div>
+            <div className="text-sm opacity-90 mb-1">Novi nivo!</div>
             <div className="text-2xl font-bold tracking-wide">
-              {ratingToast}
+              {levelToast}
             </div>
           </div>
         </div>
@@ -803,15 +793,31 @@ function QuizContent() {
       ) : allComplete ? (
         /* All Complete Screen */
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="text-6xl mb-4">{isPractice ? "💪" : "🎉"}</div>
+          <div className="text-6xl mb-4">
+            {isPractice ? "💪" : isReview ? "🔁" : "🎉"}
+          </div>
           <h2 className="text-2xl font-bold mb-2">
-            {isPractice ? "Sve je rešeno!" : "Kategorija završena!"}
+            {isPractice
+              ? "Sve je rešeno!"
+              : isReview
+                ? "Sve ponovljeno!"
+                : "Kategorija završena!"}
           </h2>
           <p className="text-[var(--muted)] mb-2">
             {isPractice
               ? "Ispravili ste sve greške u izabranim kategorijama."
-              : "Odgovorili ste na sva pitanja u izabranim kategorijama. Pitanja za ponavljanje stižu vremenom."}
+              : isReview
+                ? nextReviewDue
+                  ? `Sledeća pitanja za ponavljanje stižu ${formatDue(nextReviewDue)}.`
+                  : "Trenutno nema pitanja za ponavljanje u izabranim kategorijama."
+                : "Odgovorili ste na sva pitanja u izabranim kategorijama. Pitanja za ponavljanje stižu vremenom."}
           </p>
+          {sessionXp > 0 && (
+            <p className="text-sm font-semibold text-[var(--success)] mb-1">
+              +{formatXp(sessionXp)} XP
+              {sessionLearned > 0 && ` · 📘 ${sessionLearned} naučeno`}
+            </p>
+          )}
           {questionCount > 0 && (
             <p className="text-sm text-[var(--muted)] mb-6">
               Ova sesija: {correctCount}/{questionCount} tačno (
@@ -819,7 +825,7 @@ function QuizContent() {
             </p>
           )}
           <div className="space-y-3 w-full max-w-xs">
-            {!isPractice && nextSteps.suggestion && (
+            {!isPractice && !isReview && nextSteps.suggestion && (
               <button
                 onClick={() =>
                   // Hard navigation: this page reads its categories once on mount.
@@ -833,7 +839,7 @@ function QuizContent() {
                 {nextSteps.suggestion.remaining} novih)
               </button>
             )}
-            {!isPractice && nextSteps.mistakes > 0 && (
+            {!isPractice && !isReview && nextSteps.mistakes > 0 && (
               <button
                 onClick={() =>
                   window.location.assign(
@@ -845,7 +851,7 @@ function QuizContent() {
                 Vežbaj greške ({nextSteps.mistakes})
               </button>
             )}
-            {!isPractice && (
+            {!isPractice && !isReview && (
               <button
                 onClick={handleReset}
                 className="w-full bg-[var(--card)] hover:bg-[var(--card-hover)] border border-[var(--border)] text-white font-semibold rounded-xl px-4 py-3 text-sm transition-colors"
@@ -859,7 +865,7 @@ function QuizContent() {
             <button
               onClick={() => router.push("/lobby")}
               className={`w-full font-semibold rounded-xl px-4 py-3 text-sm transition-colors ${
-                isPractice
+                isPractice || isReview
                   ? "bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white"
                   : "bg-[var(--card)] hover:bg-[var(--card-hover)] border border-[var(--border)] text-white"
               }`}
@@ -874,14 +880,13 @@ function QuizContent() {
           <div className="flex items-center justify-between text-sm text-[var(--muted)]">
             <span>Pitanje #{questionCount + (answered ? 0 : 1)}</span>
             <div className="flex items-center gap-3">
-              {rating && (
+              {progress && (
                 <span
-                  title="Rejting"
+                  title={`Nivo ${progress.level} · ${formatXp(progress.xp)} XP`}
                   className="tabular-nums font-semibold text-[var(--accent-text)]"
                 >
-                  {isPlacement(rating)
-                    ? `📊 ${rating.rated_answers}/${PLACEMENT_ANSWERS}`
-                    : `⭐ ${rating.shown}`}
+                  Nv {progress.level}
+                  {sessionXp > 0 && ` · +${formatXp(sessionXp)}`}
                 </span>
               )}
               {streak >= 2 && (
@@ -923,6 +928,13 @@ function QuizContent() {
                 }`}
               >
                 {isCorrect ? "✓ Tačno!" : "✗ Netačno"}
+                {answerXp &&
+                  answerXp.questionId === question.id &&
+                  answerXp.xp > 0 && (
+                  <span className="ml-2 text-[var(--accent-text)]">
+                    {answerXp.learned ? "📘 Naučeno! " : ""}+{answerXp.xp} XP
+                  </span>
+                )}
                 {!isCorrect && (
                   <span className="block text-xs mt-1 opacity-70">
                     Tačan odgovor:{" "}

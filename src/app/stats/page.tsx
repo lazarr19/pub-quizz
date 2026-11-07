@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import AppShell from "@/components/AppShell";
-import RatingCard from "@/components/RatingCard";
-import RatingChart from "@/components/RatingChart";
-import { RatingInfo, isPlacement } from "@/lib/rating";
+import LevelCard from "@/components/LevelCard";
+import XpChart from "@/components/XpChart";
+import { ProgressInfo } from "@/lib/progress";
 
-const HISTORY_DAYS = 90;
+const HISTORY_DAYS = 30;
 
 interface CategoryStat {
   category_id: string;
@@ -20,7 +20,7 @@ interface CategoryStat {
 export default function StatsPage() {
   const [stats, setStats] = useState<CategoryStat[]>([]);
   const [loading, setLoading] = useState(true);
-  const [rating, setRating] = useState<RatingInfo | null>(null);
+  const [progress, setProgress] = useState<ProgressInfo | null>(null);
   const supabase = createClient();
 
   useEffect(() => {
@@ -34,13 +34,13 @@ export default function StatsPage() {
     } = await supabase.auth.getUser();
     if (!user) return;
 
-    const [{ data }, { data: ratingData }] = await Promise.all([
+    const [{ data }, { data: progressData }] = await Promise.all([
       supabase.rpc("get_player_stats", { p_user_id: user.id }),
-      supabase.rpc("get_my_rating", { p_history_days: HISTORY_DAYS }),
+      supabase.rpc("get_my_progress", { p_history_days: HISTORY_DAYS }),
     ]);
 
     if (data) setStats(data);
-    if (ratingData) setRating(ratingData as RatingInfo);
+    if (progressData) setProgress(progressData as ProgressInfo);
     setLoading(false);
   };
 
@@ -91,26 +91,20 @@ export default function StatsPage() {
         <div className="space-y-6">
           <h2 className="text-xl font-bold">Vaša statistika</h2>
 
-          {/* Rating: current tier + history */}
-          {rating && (
+          {/* Level / XP + daily XP */}
+          {progress && (
             <div className="space-y-3">
-              <RatingCard info={rating} />
-              {!isPlacement(rating) && (
-                <div className="bg-[var(--card)] rounded-2xl p-4 border border-[var(--border)]">
-                  <h3 className="text-sm font-medium text-[var(--muted)] mb-2">
-                    Rejting - poslednjih {HISTORY_DAYS} dana
-                  </h3>
-                  <RatingChart
-                    history={rating.history ?? []}
-                    historyStart={rating.history_start}
-                    days={HISTORY_DAYS}
-                  />
-                </div>
-              )}
+              <LevelCard info={progress} />
+              <div className="bg-[var(--card)] rounded-2xl p-4 border border-[var(--border)]">
+                <h3 className="text-sm font-medium text-[var(--muted)] mb-2">
+                  XP po danima - poslednjih {HISTORY_DAYS} dana
+                </h3>
+                <XpChart history={progress.history ?? []} days={HISTORY_DAYS} />
+              </div>
               <p className="text-[11px] text-[var(--muted)] px-1">
-                Rejting raste kada tačno odgovorite na teža pitanja. Računa se
-                samo prvi odgovor na svako pitanje - ponavljanja i vežbanje
-                grešaka ga ne menjaju.
+                XP dobijate za svako novo pitanje (više za teža), za trud i
+                kada netačno pitanje kasnije tačno ponovite (📘 naučeno,
+                +15 XP). Pitanja za ponavljanje stižu posle 1, 3, 7 i 21 dan.
               </p>
             </div>
           )}

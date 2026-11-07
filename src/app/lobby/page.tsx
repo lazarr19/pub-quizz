@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import AppShell from "@/components/AppShell";
-import RatingCard from "@/components/RatingCard";
-import { RatingInfo } from "@/lib/rating";
+import LevelCard from "@/components/LevelCard";
+import { ProgressInfo } from "@/lib/progress";
 
 interface CategoryStat {
   category_id: string;
@@ -16,6 +16,8 @@ interface CategoryStat {
   // Questions due for a spaced-repetition review (absent before migration 022)
   due_reviews?: number;
 }
+
+type Mode = "new" | "review" | "mistakes";
 
 interface DailyChallengeStatus {
   answered: number;
@@ -29,9 +31,9 @@ export default function LobbyPage() {
     null,
   );
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [mode, setMode] = useState<"new" | "mistakes">("new");
+  const [mode, setMode] = useState<Mode>("new");
   const [loading, setLoading] = useState(true);
-  const [rating, setRating] = useState<RatingInfo | null>(null);
+  const [progress, setProgress] = useState<ProgressInfo | null>(null);
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
 
@@ -51,20 +53,20 @@ export default function LobbyPage() {
       { data, error },
       { data: daily },
       { data: dailyStreak },
-      { data: ratingData },
+      { data: progressData },
     ] = await Promise.all([
       supabase.rpc("get_player_stats", { p_user_id: user.id }),
       supabase.rpc("get_daily_challenge", { p_user_id: user.id }),
       supabase.rpc("get_daily_challenge_streak", { p_user_id: user.id }),
-      supabase.rpc("get_my_rating", { p_history_days: 0 }),
+      supabase.rpc("get_my_progress", { p_history_days: 0 }),
     ]);
 
     if (!error && data) {
       setStats(data);
     }
-    // Absent until migration 026 is applied; the card simply doesn't render.
-    if (ratingData) {
-      setRating(ratingData as RatingInfo);
+    // Absent until migration 027 is applied; the card simply doesn't render.
+    if (progressData) {
+      setProgress(progressData as ProgressInfo);
     }
     if (daily) {
       const responses = daily.responses as { is_correct: boolean }[];
@@ -89,24 +91,24 @@ export default function LobbyPage() {
     });
   };
 
+  // Categories that have something to play in the current mode.
+  const isEligible = (s: CategoryStat) =>
+    mode === "mistakes"
+      ? s.answered - s.correct > 0
+      : mode === "review"
+        ? Number(s.due_reviews ?? 0) > 0
+        : true;
+  const eligibleCount = stats.filter(isEligible).length;
+
   const selectAll = () => {
-    if (mode === "mistakes") {
-      const mistakeCategories = stats.filter((s) => s.answered - s.correct > 0);
-      if (selected.size === mistakeCategories.length) {
-        setSelected(new Set());
-      } else {
-        setSelected(new Set(mistakeCategories.map((s) => s.category_id)));
-      }
+    if (selected.size === eligibleCount) {
+      setSelected(new Set());
     } else {
-      if (selected.size === stats.length) {
-        setSelected(new Set());
-      } else {
-        setSelected(new Set(stats.map((s) => s.category_id)));
-      }
+      setSelected(new Set(stats.filter(isEligible).map((s) => s.category_id)));
     }
   };
 
-  const handleModeChange = (newMode: "new" | "mistakes") => {
+  const handleModeChange = (newMode: Mode) => {
     setMode(newMode);
     setSelected(new Set());
   };
@@ -114,7 +116,7 @@ export default function LobbyPage() {
   const startTraining = () => {
     const ids = Array.from(selected).join(",");
     router.push(
-      `/quiz?categories=${ids}${mode === "mistakes" ? "&mode=mistakes" : ""}`,
+      `/quiz?categories=${ids}${mode === "new" ? "" : `&mode=${mode}`}`,
     );
   };
 
@@ -127,6 +129,10 @@ export default function LobbyPage() {
   const selectedMistakeCount = stats
     .filter((s) => selected.has(s.category_id))
     .reduce((a, s) => a + (s.answered - s.correct), 0);
+  const totalDue = stats.reduce((a, s) => a + Number(s.due_reviews ?? 0), 0);
+  const selectedDueCount = stats
+    .filter((s) => selected.has(s.category_id))
+    .reduce((a, s) => a + Number(s.due_reviews ?? 0), 0);
 
   return (
     <AppShell>
@@ -181,9 +187,9 @@ export default function LobbyPage() {
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Player rating */}
-          {rating && (
-            <RatingCard info={rating} onClick={() => router.push("/stats")} />
+          {/* Level / XP */}
+          {progress && (
+            <LevelCard info={progress} onClick={() => router.push("/stats")} />
           )}
 
           {/* Daily Challenge Card */}
@@ -240,28 +246,38 @@ export default function LobbyPage() {
           </div>
 
           {/* Mode Toggle */}
-          <div className="flex bg-[var(--card)] rounded-xl border border-[var(--border)] p-1">
-            <button
-              onClick={() => handleModeChange("new")}
-              className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${
-                mode === "new"
-                  ? "bg-[var(--accent)] text-white shadow-sm"
-                  : "text-[var(--muted)] hover:text-[var(--foreground)]"
-              }`}
-            >
-              Nova pitanja
-            </button>
-            <button
-              onClick={() => handleModeChange("mistakes")}
-              className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${
-                mode === "mistakes"
-                  ? "bg-[var(--accent)] text-white shadow-sm"
-                  : "text-[var(--muted)] hover:text-[var(--foreground)]"
-              }`}
-            >
-              Greške{totalMistakes > 0 && ` (${totalMistakes})`}
-            </button>
+          <div className="flex bg-[var(--card)] rounded-xl border border-[var(--border)] p-1 gap-1">
+            {(
+              [
+                ["new", "Nova", null],
+                ["review", "Ponavljanje", totalDue],
+                ["mistakes", "Greške", totalMistakes],
+              ] as [Mode, string, number | null][]
+            ).map(([m, label, count]) => (
+              <button
+                key={m}
+                onClick={() => handleModeChange(m)}
+                className={`flex-1 py-2.5 px-2 rounded-lg text-sm font-medium transition-all ${
+                  mode === m
+                    ? "bg-[var(--accent)] text-white shadow-sm"
+                    : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                }`}
+              >
+                {label}
+                {count !== null && count > 0 && (
+                  <span className="ml-1 text-xs opacity-80 tabular-nums">
+                    {count > 999 ? "999+" : count}
+                  </span>
+                )}
+              </button>
+            ))}
           </div>
+          {mode === "review" && (
+            <p className="text-xs text-[var(--muted)] -mt-3 px-1">
+              🔁 Pitanja koja su došla na red za ponavljanje - prvo ona koja ste
+              promašili. Promašeno pitanje koje sada znate: 📘 +15 XP.
+            </p>
+          )}
 
           {/* Category Selection */}
           <div>
@@ -271,14 +287,9 @@ export default function LobbyPage() {
                 onClick={selectAll}
                 className="text-xs text-[var(--accent-text)] hover:underline"
               >
-                {mode === "mistakes"
-                  ? selected.size ===
-                    stats.filter((s) => s.answered - s.correct > 0).length
-                    ? "Poništi sve"
-                    : "Izaberi sve"
-                  : selected.size === stats.length
-                    ? "Poništi sve"
-                    : "Izaberi sve"}
+                {selected.size === eligibleCount && eligibleCount > 0
+                  ? "Poništi sve"
+                  : "Izaberi sve"}
               </button>
             </div>
 
@@ -286,7 +297,8 @@ export default function LobbyPage() {
               {stats.map((stat) => {
                 const isSelected = selected.has(stat.category_id);
                 const mistakes = stat.answered - stat.correct;
-                const isDisabledByMode = mode === "mistakes" && mistakes === 0;
+                const due = Number(stat.due_reviews ?? 0);
+                const isDisabledByMode = !isEligible(stat);
                 const progress =
                   stat.total_questions > 0
                     ? (stat.answered / stat.total_questions) * 100
@@ -346,7 +358,17 @@ export default function LobbyPage() {
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        {mode === "new" ? (
+                        {mode === "review" ? (
+                          due > 0 ? (
+                            <span className="text-xs text-[var(--accent-text)] tabular-nums">
+                              🔁 {due}
+                            </span>
+                          ) : (
+                            <span className="text-[10px] bg-[var(--success)]/20 text-[var(--success)] px-2 py-0.5 rounded-full font-medium">
+                              SVE PONOVLJENO
+                            </span>
+                          )
+                        ) : mode === "new" ? (
                           <>
                             {isComplete && (
                               <span className="text-[10px] bg-[var(--success)]/20 text-[var(--success)] px-2 py-0.5 rounded-full font-medium">
@@ -415,12 +437,18 @@ export default function LobbyPage() {
             disabled={selected.size === 0}
             className="w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] disabled:opacity-30 disabled:cursor-not-allowed text-white font-semibold rounded-xl px-4 py-4 text-sm transition-colors sticky bottom-4"
           >
-            {mode === "mistakes" ? "Započni vežbu" : "Započni trening"}
+            {mode === "mistakes"
+              ? "Započni vežbu"
+              : mode === "review"
+                ? "Započni ponavljanje"
+                : "Započni trening"}
             {selected.size > 0 && (
               <span className="ml-1 opacity-70">
                 {mode === "mistakes"
                   ? `(${selectedMistakeCount} greš${selectedMistakeCount === 1 ? "ka" : "ke"})`
-                  : `(${selected.size} ${selected.size === 1 ? "kategorija" : "kategorije"})`}
+                  : mode === "review"
+                    ? `(${selectedDueCount} pitanja)`
+                    : `(${selected.size} ${selected.size === 1 ? "kategorija" : "kategorije"})`}
               </span>
             )}
           </button>
