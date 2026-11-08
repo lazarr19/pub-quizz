@@ -103,7 +103,7 @@ function LoginForm() {
         return;
       }
 
-      const { error } = await supabase.auth.signUp({
+      const { data: signUpData, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -111,8 +111,21 @@ function LoginForm() {
           emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/login`,
         },
       });
+      // With email confirmation on, Supabase doesn't error for an email that
+      // already has a confirmed account (anti-enumeration): it returns a fake
+      // user with no identities and sends nothing. Say so instead of claiming
+      // the account was created.
+      const alreadyRegistered =
+        !error && signUpData.user?.identities?.length === 0;
       if (error) {
         setError(translateAuthError(error.message));
+      } else if (alreadyRegistered) {
+        setError(
+          "Ovaj email već ima nalog. Prijavite se ili kliknite „Zaboravili ste lozinku?”.",
+        );
+        setIdentifier(email);
+        setPassword("");
+        setIsSignUp(false);
       } else {
         fetch("/api/notify-signup", {
           method: "POST",
