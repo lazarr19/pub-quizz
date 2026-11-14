@@ -16,10 +16,15 @@ export default function LoginPage() {
 // actually hit; fall back to a generic message rather than leaking raw
 // English text for anything unrecognized.
 function translateAuthError(message: string): string {
+  // e.g. "For security purposes, you can only request this after 37 seconds."
+  const wait = message.match(/after (\d+) seconds?/);
+  if (wait) return `Sačekajte još ${wait[1]} s pa pokušajte ponovo.`;
+  if (/rate limit/i.test(message))
+    return "Previše pokušaja. Sačekajte par minuta pa pokušajte ponovo.";
   const known: Record<string, string> = {
     "Invalid login credentials": "Pogrešan email/nadimak ili lozinka.",
     "Email not confirmed":
-      "Nalog nije potvrđen. Proverite email za link za potvrdu.",
+      "Nalog nije potvrđen. Proverite email (i folder Spam / Promocije) za link za potvrdu.",
     "User already registered": "Nalog sa ovim emailom već postoji.",
     "Password should be at least 6 characters":
       "Lozinka mora imati bar 6 karaktera.",
@@ -40,6 +45,15 @@ function LoginForm() {
   const [success, setSuccess] = useState("");
   const [unconfirmedEmail, setUnconfirmedEmail] = useState("");
   const [resending, setResending] = useState(false);
+  // After signup: the address the confirmation link went to, the nickname the
+  // account actually has, and whether this was a repeat of an earlier signup.
+  const [sent, setSent] = useState<{
+    email: string;
+    name: string;
+    repeat: boolean;
+  } | null>(null);
+  const [resendIn, setResendIn] = useState(0);
+  const [resendNote, setResendNote] = useState("");
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createClient();
@@ -52,6 +66,30 @@ function LoginForm() {
       setIsSignUp(false);
     }
   }, [searchParams]);
+
+  // Resend cooldown (Supabase allows one confirmation email per 60 s).
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    const t = setTimeout(() => setResendIn((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendIn]);
+
+  const resendSignupLink = async () => {
+    if (!sent || resendIn > 0) return;
+    setResending(true);
+    setResendNote("");
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: sent.email,
+    });
+    setResendNote(
+      error
+        ? translateAuthError(error.message)
+        : "Poslato ponovo! Proverite i Spam / Promocije.",
+    );
+    setResendIn(60);
+    setResending(false);
+  };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,7 +135,12 @@ function LoginForm() {
         "get_email_by_display_name",
         { p_display_name: displayName.trim() },
       );
-      if (existingEmail) {
+      // Taken - unless by this same email (someone repeating their own
+      // unconfirmed signup): let it through, Supabase just resends the link.
+      if (
+        existingEmail &&
+        String(existingEmail).toLowerCase() !== email.trim().toLowerCase()
+      ) {
         setError("Ovaj nadimak je već zauzet. Izaberite drugi.");
         setLoading(false);
         return;
@@ -117,7 +160,12 @@ function LoginForm() {
       // the account was created.
       const alreadyRegistered =
         !error && signUpData.user?.identities?.length === 0;
-      if (error) {
+      if (error && /after \d+ seconds?/.test(error.message)) {
+        // Repeated within a minute: the first link is already on its way.
+        setError(
+          "Link za potvrdu je već poslat na ovaj email pre manje od minut. Proverite i Spam / Promocije.",
+        );
+      } else if (error) {
         setError(translateAuthError(error.message));
       } else if (alreadyRegistered) {
         setError(
@@ -127,17 +175,35 @@ function LoginForm() {
         setPassword("");
         setIsSignUp(false);
       } else {
-        fetch("/api/notify-signup", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, displayName: displayName.trim() }),
-        }).catch(() => {});
-        // Navigating to /login?confirmed=1 doesn't remount this component
-        // (same route, only the query string changes) - reset local state
-        // ourselves instead of relying on navigation to do it.
+        // A repeat signup for an UNCONFIRMED email returns the existing user
+        // (Supabase resends the link, keeps the original nickname): its
+        // created_at is older than the link just sent. Server timestamps on
+        // both sides, so the client clock doesn't matter.
+        const u = signUpData.user;
+        const repeat =
+          !!u?.created_at &&
+          !!u?.confirmation_sent_at &&
+          new Date(u.confirmation_sent_at).getTime() -
+            new Date(u.created_at).getTime() >
+            10_000;
+        if (!repeat) {
+          fetch("/api/notify-signup", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, displayName: displayName.trim() }),
+          }).catch(() => {});
+        }
+        setSent({
+          email: email.trim(),
+          name:
+            (u?.user_metadata?.display_name as string | undefined) ??
+            displayName.trim(),
+          repeat,
+        });
+        setResendIn(60);
+        setResendNote("");
         setPassword("");
         setLoading(false);
-        router.push("/login?confirmed=1");
         return;
       }
     } else {
@@ -209,7 +275,76 @@ function LoginForm() {
           </p>
         </div>
 
-        {/* Form Card */}
+        {sent ? (
+          <div className="bg-[var(--card)] rounded-2xl p-6 space-y-4 border border-[var(--border)] text-center">
+            <div className="text-4xl">📬</div>
+            <h2 className="text-lg font-semibold">Proverite email</h2>
+            {sent.repeat && (
+              <p className="text-sm bg-[var(--accent)]/10 border border-[var(--accent)]/30 rounded-lg p-3">
+                Već ste započeli registraciju sa ovim emailom kao{" "}
+                <span className="font-semibold">{sent.name}</span>. Poslali
+                smo vam link ponovo.
+              </p>
+            )}
+            <p className="text-sm">
+              Poslali smo link za potvrdu na{" "}
+              <span className="font-semibold break-all">{sent.email}</span>.
+              Kliknite na njega, pa se prijavite
+              {sent.repeat ? "" : (
+                <>
+                  {" "}kao <span className="font-semibold">{sent.name}</span>
+                </>
+              )}
+              .
+            </p>
+            <p className="text-sm text-[var(--muted)]">
+              Email može da stigne za minut. Ako ga ne vidite, proverite
+              folder <span className="font-semibold text-[var(--foreground)]">Spam</span>{" "}
+              ili <span className="font-semibold text-[var(--foreground)]">Promocije</span>.
+            </p>
+            {resendNote && <p className="text-xs text-[var(--muted)]">{resendNote}</p>}
+            <button
+              type="button"
+              onClick={resendSignupLink}
+              disabled={resending || resendIn > 0}
+              className="w-full border border-[var(--border)] hover:border-[var(--accent)] rounded-xl px-4 py-3 text-sm font-semibold transition-colors disabled:opacity-50"
+            >
+              {resending
+                ? "Šaljem..."
+                : resendIn > 0
+                  ? `Pošalji ponovo (${resendIn} s)`
+                  : "Pošalji ponovo"}
+            </button>
+            <p className="text-xs text-[var(--muted)]">
+              Pogrešan email?{" "}
+              <button
+                type="button"
+                onClick={() => {
+                  setSent(null);
+                  setError("");
+                  setSuccess("");
+                }}
+                className="text-[var(--accent-text)] hover:underline"
+              >
+                Registrujte se ponovo
+              </button>{" "}
+              ·{" "}
+              <button
+                type="button"
+                onClick={() => {
+                  setIdentifier(sent.email);
+                  setSent(null);
+                  setIsSignUp(false);
+                  setError("");
+                  setSuccess("");
+                }}
+                className="text-[var(--accent-text)] hover:underline"
+              >
+                Već sam potvrdio/la — prijava
+              </button>
+            </p>
+          </div>
+        ) : (
         <form
           onSubmit={forgotPassword ? handleForgotPassword : handleSubmit}
           className="bg-[var(--card)] rounded-2xl p-6 space-y-4 border border-[var(--border)]"
@@ -385,6 +520,7 @@ function LoginForm() {
             )}
           </p>
         </form>
+        )}
 
         <p className="text-center mt-4">
           <button
