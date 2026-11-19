@@ -12,6 +12,7 @@ function isAlwaysPublicPath(pathname: string): boolean {
     pathname === "/" ||
     pathname === "/demo" ||
     pathname === "/pub-kviz-pitanja" ||
+    pathname.startsWith("/test-opste-informisanosti") ||
     pathname.startsWith("/kategorije")
   );
 }

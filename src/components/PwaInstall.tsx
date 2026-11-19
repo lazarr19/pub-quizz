@@ -37,7 +37,23 @@ export default function PwaInstall() {
 
   useEffect(() => {
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").catch(() => {});
+      if (process.env.NODE_ENV === "production") {
+        navigator.serviceWorker.register("/sw.js").catch(() => {});
+      } else {
+        // The worker serves scripts cache-first, and dev chunk names are not
+        // content-hashed, so a leftover worker feeds the page stale chunks
+        // ("Cannot read properties of undefined (reading 'call')").
+        navigator.serviceWorker
+          .getRegistrations()
+          .then((regs) => regs.forEach((r) => r.unregister()))
+          .catch(() => {});
+        if ("caches" in window) {
+          caches
+            .keys()
+            .then((keys) => keys.forEach((k) => caches.delete(k)))
+            .catch(() => {});
+        }
+      }
     }
 
     const isStandalone =

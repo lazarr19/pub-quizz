@@ -1,0 +1,469 @@
+{
+  "id": "fon-probni-test-1",
+  "title": "Probni test opšte informisanosti za FON",
+  "status": "DRAFT - needs fact-check by Lazar before publishing",
+  "format": {
+    "questions": 30,
+    "options": 5,
+    "scoring": {
+      "correct": 1,
+      "wrong": -0.1,
+      "dontKnow": 0,
+      "unanswered": -0.1
+    },
+    "timeMinutes": 45,
+    "note": "Per the official FON 2024 sheet: 5 options (a-e) plus 'ne znam' (n), +1 correct, -0.1 wrong, 0 for 'ne znam', 45 minutes. The sheet says leaving a question unmarked carries a penalty without giving the amount; this practice test treats unanswered as -0.1. 'Ne znam' is added by the UI, not stored here."
+  },
+  "questions": [
+    {
+      "id": 1,
+      "topic": "ekonomija",
+      "difficulty": 1,
+      "question": "Šta meri bruto domaći proizvod (BDP)?",
+      "options": {
+        "a": "Zbir svih plata zaposlenih u zemlji",
+        "b": "Razliku između izvoza i uvoza zemlje",
+        "c": "Ukupnu vrednost svih transakcija u zemlji, uključujući i međufaze proizvodnje",
+        "d": "Vrednost finalnih dobara i usluga proizvedenih u zemlji u određenom periodu",
+        "e": "Prihode državnog budžeta"
+      },
+      "correct": "d",
+      "explanation": "BDP je tržišna vrednost svih finalnih dobara i usluga proizvedenih na teritoriji zemlje u datom periodu (obično godinu dana). Međufaze se ne računaju da se ista vrednost ne bi brojala više puta."
+    },
+    {
+      "id": 2,
+      "topic": "ekonomija",
+      "difficulty": 3,
+      "question": "Šta meri Ginijev koeficijent?",
+      "options": {
+        "a": "Nejednakost u raspodeli dohotka u društvu",
+        "b": "Stopu inflacije",
+        "c": "Visinu javnog duga u odnosu na BDP",
+        "d": "Stopu nezaposlenosti",
+        "e": "Odnos izvoza i uvoza"
+      },
+      "correct": "a",
+      "explanation": "Ginijev koeficijent ide od 0 (potpuna jednakost) do 1 (potpuna nejednakost) i pokazuje koliko je dohodak neravnomerno raspoređen. Što je veći, nejednakost je veća."
+    },
+    {
+      "id": 3,
+      "topic": "marketing",
+      "difficulty": 2,
+      "question": "Koja od navedenih grupa predstavlja klasični marketing miks (4P)?",
+      "options": {
+        "a": "Proizvod, cena, profit, ljudi",
+        "b": "Potražnja, ponuda, cena, profit",
+        "c": "Proizvod, proces, ljudi, profit",
+        "d": "Pozicioniranje, plan, proizvodnja, prodaja",
+        "e": "Proizvod, cena, distribucija (mesto), promocija"
+      },
+      "correct": "e",
+      "explanation": "Klasični marketing miks čine četiri P: product (proizvod), price (cena), place (distribucija) i promotion (promocija)."
+    },
+    {
+      "id": 4,
+      "topic": "menadzment",
+      "difficulty": 2,
+      "question": "Koji elementi SWOT analize se odnose na faktore iz spoljašnjeg okruženja organizacije?",
+      "options": {
+        "a": "Snage i slabosti",
+        "b": "Prilike i pretnje",
+        "c": "Snage i prilike",
+        "d": "Slabosti i pretnje",
+        "e": "Snage i pretnje"
+      },
+      "correct": "b",
+      "explanation": "SWOT razdvaja unutrašnje faktore (snage i slabosti) od spoljašnjih (prilike i pretnje) koji dolaze iz okruženja."
+    },
+    {
+      "id": 5,
+      "topic": "ekonomija",
+      "difficulty": 1,
+      "question": "Ko je autor dela „Bogatstvo naroda“ (1776)?",
+      "options": {
+        "a": "Adam Smit",
+        "b": "Dejvid Rikardo",
+        "c": "Džon Mejnard Kejns",
+        "d": "Karl Marks",
+        "e": "Milton Fridman"
+      },
+      "correct": "a",
+      "explanation": "Adam Smit (Adam Smith) je u delu „Bogatstvo naroda“ postavio temelje klasične ekonomije, uključujući ideju o „nevidljivoj ruci“ tržišta."
+    },
+    {
+      "id": 6,
+      "topic": "finansije",
+      "difficulty": 2,
+      "question": "Ako se 1.000 evra uloži na dve godine uz 10% složene godišnje kamate (kamata se na kraju svake godine pripisuje glavnici), koliki je iznos na kraju druge godine?",
+      "options": {
+        "a": "1.100 evra",
+        "b": "1.200 evra",
+        "c": "1.210 evra",
+        "d": "1.220 evra",
+        "e": "1.331 evro"
+      },
+      "correct": "c",
+      "explanation": "Posle prve godine iznos je 1.000 × 1,1 = 1.100, a posle druge 1.100 × 1,1 = 1.210. Iznos od 1.331 bi bio tek posle tri godine."
+    },
+    {
+      "id": 7,
+      "topic": "menadzment",
+      "difficulty": 1,
+      "question": "Koja funkcija menadžmenta podrazumeva postavljanje ciljeva i određivanje načina na koji će oni biti ostvareni?",
+      "options": {
+        "a": "Organizovanje",
+        "b": "Vođenje",
+        "c": "Kontrolisanje",
+        "d": "Planiranje",
+        "e": "Delegiranje"
+      },
+      "correct": "d",
+      "explanation": "Planiranje je prva funkcija menadžmenta: definiše ciljeve i puteve do njih. Organizovanje, vođenje i kontrolisanje slede nakon plana."
+    },
+    {
+      "id": 8,
+      "topic": "ekonomija",
+      "difficulty": 3,
+      "question": "Cena nekog dobra poraste za 10%, a tražena količina padne za 20%. Koliki je koeficijent cenovne elastičnosti tražnje (po apsolutnoj vrednosti)?",
+      "options": {
+        "a": "0,2",
+        "b": "0,5",
+        "c": "1",
+        "d": "2",
+        "e": "10"
+      },
+      "correct": "d",
+      "explanation": "Elastičnost je procentna promena tražene količine podeljena procentnom promenom cene: 20% / 10% = 2. Vrednost veća od 1 znači da je tražnja elastična."
+    },
+    {
+      "id": 9,
+      "topic": "informatika",
+      "difficulty": 3,
+      "question": "Kolika je vremenska složenost binarne pretrage u sortiranom nizu od n elemenata?",
+      "options": {
+        "a": "O(1)",
+        "b": "O(n)",
+        "c": "O(log n)",
+        "d": "O(n log n)",
+        "e": "O(n²)"
+      },
+      "correct": "c",
+      "explanation": "Binarna pretraga u svakom koraku odbacuje polovinu preostalih elemenata, pa joj treba najviše oko log₂ n koraka. Linearna pretraga ima složenost O(n)."
+    },
+    {
+      "id": 10,
+      "topic": "informatika",
+      "difficulty": 3,
+      "question": "Koji protokol transportnog sloja obezbeđuje pouzdan prenos podataka uz prethodno uspostavljanje veze?",
+      "options": {
+        "a": "UDP",
+        "b": "TCP",
+        "c": "IP",
+        "d": "ARP",
+        "e": "DNS"
+      },
+      "correct": "b",
+      "explanation": "TCP uspostavlja vezu, potvrđuje prijem i ponovo šalje izgubljene pakete. UDP je takođe na transportnom sloju, ali bez garancije isporuke, a IP radi na mrežnom sloju."
+    },
+    {
+      "id": 11,
+      "topic": "informatika",
+      "difficulty": 2,
+      "question": "Koji od navedenih primera je sistem za upravljanje bazama podataka?",
+      "options": {
+        "a": "Photoshop",
+        "b": "Chrome",
+        "c": "Git",
+        "d": "Linux",
+        "e": "PostgreSQL"
+      },
+      "correct": "e",
+      "explanation": "PostgreSQL je relaciona baza podataka (DBMS). Photoshop je alat za obradu slike, Chrome pregledač, Zoom aplikacija za video pozive, Git sistem za verzionisanje koda, a Linux operativni sistem."
+    },
+    {
+      "id": 12,
+      "topic": "informatika",
+      "difficulty": 2,
+      "question": "Kako glasi binarni zapis decimalnog broja 5?",
+      "options": {
+        "a": "11",
+        "b": "100",
+        "c": "110",
+        "d": "111",
+        "e": "101"
+      },
+      "correct": "e",
+      "explanation": "5 = 4 + 1 = 1·2² + 0·2¹ + 1·2⁰, pa je binarni zapis 101."
+    },
+    {
+      "id": 13,
+      "topic": "informatika",
+      "difficulty": 1,
+      "question": "Ko je tvorac jezgra operativnog sistema Linux?",
+      "options": {
+        "a": "Bil Gejts",
+        "b": "Stiv Džobs",
+        "c": "Denis Riči",
+        "d": "Linus Torvalds",
+        "e": "Tim Berners-Li"
+      },
+      "correct": "d",
+      "explanation": "Linus Torvalds je 1991. objavio prvu verziju Linux jezgra. Denis Riči je, zajedno sa Kenom Tompsonom, tvorac Unixa i jezika C."
+    },
+    {
+      "id": 14,
+      "topic": "informatika",
+      "difficulty": 2,
+      "question": "Kako se zove prevara u kojoj se napadač lažno predstavlja kao pouzdan subjekt (na primer banka) da bi korisnika naveo da otkrije lozinke ili podatke o platnoj kartici?",
+      "options": {
+        "a": "Fišing (phishing)",
+        "b": "Spam",
+        "c": "Ransomver",
+        "d": "DDoS napad",
+        "e": "Keylogger"
+      },
+      "correct": "a",
+      "explanation": "Fišing je socijalni inženjering putem lažnih poruka ili sajtova. Ransomver šifruje podatke radi otkupa, DDoS preplavljuje servis saobraćajem, a keylogger beleži otkucaje tastera."
+    },
+    {
+      "id": 15,
+      "topic": "informatika",
+      "difficulty": 3,
+      "question": "Ime Ade Lavlejs (Ada Lovelace) vezuje se za:",
+      "options": {
+        "a": "izum interneta",
+        "b": "prvi objavljeni algoritam namenjen izvršavanju na mašini (Bebidžova analitička mašina)",
+        "c": "dešifrovanje poruka mašine Enigma",
+        "d": "razvoj programskog jezika C",
+        "e": "izum mikroprocesora"
+      },
+      "correct": "b",
+      "explanation": "Ada Lavlejs je u beleškama uz Bebidžovu analitičku mašinu (objavljenim 1843) opisala algoritam za izračunavanje Bernulijevih brojeva, što se smatra prvim objavljenim računarskim programom. Mašina nikada nije dovršena, a Enigmu je razbijao tim oko Alana Tjuringa."
+    },
+    {
+      "id": 16,
+      "topic": "drustvo",
+      "difficulty": 1,
+      "question": "Koliko narodnih poslanika ima Narodna skupština Republike Srbije?",
+      "options": {
+        "a": "100",
+        "b": "120",
+        "c": "150",
+        "d": "200",
+        "e": "250"
+      },
+      "correct": "e",
+      "explanation": "Narodna skupština Republike Srbije ima 250 narodnih poslanika."
+    },
+    {
+      "id": 17,
+      "topic": "drustvo",
+      "difficulty": 1,
+      "question": "Koje godine su osnovane Ujedinjene nacije?",
+      "options": {
+        "a": "1919.",
+        "b": "1939.",
+        "c": "1945.",
+        "d": "1948.",
+        "e": "1963."
+      },
+      "correct": "c",
+      "explanation": "Ujedinjene nacije su osnovane 1945, posle Drugog svetskog rata, stupanjem na snagu Povelje UN. Liga naroda je osnovana 1919, a Evropska ekonomska zajednica 1957."
+    },
+    {
+      "id": 18,
+      "topic": "drustvo",
+      "difficulty": 2,
+      "question": "Teorija o podeli vlasti na zakonodavnu, izvršnu i sudsku najčešće se vezuje za:",
+      "options": {
+        "a": "Žan-Žaka Rusoa",
+        "b": "Džona Loka",
+        "c": "Tomasa Hobsa",
+        "d": "Voltera",
+        "e": "Šarla de Monteskjea"
+      },
+      "correct": "e",
+      "explanation": "Monteskje je u delu „O duhu zakona“ (1748) razradio podelu vlasti kao zaštitu od zloupotrebe. Lok je pre njega razlikovao zakonodavnu i izvršnu vlast."
+    },
+    {
+      "id": 19,
+      "topic": "drustvo",
+      "difficulty": 2,
+      "question": "Koji organ u Srbiji odlučuje o saglasnosti zakona sa Ustavom?",
+      "options": {
+        "a": "Ustavni sud",
+        "b": "Vrhovni sud",
+        "c": "Visoki savet sudstva",
+        "d": "Zaštitnik građana",
+        "e": "Državna revizorska institucija"
+      },
+      "correct": "a",
+      "explanation": "Ustavni sud štiti ustavnost i zakonitost: odlučuje o saglasnosti zakona i drugih opštih akata sa Ustavom i može ukloniti neustavne propise. Ne treba ga mešati sa Vrhovnim sudom, najvišim sudom opšte nadležnosti."
+    },
+    {
+      "id": 20,
+      "topic": "drustvo",
+      "difficulty": 2,
+      "question": "Koja institucija u Srbiji vodi monetarnu politiku i izdaje dinar?",
+      "options": {
+        "a": "Ministarstvo finansija",
+        "b": "Privredna komora Srbije",
+        "c": "Fiskalni savet",
+        "d": "Narodna banka Srbije",
+        "e": "Uprava za trezor"
+      },
+      "correct": "d",
+      "explanation": "Narodna banka Srbije je centralna banka: vodi monetarnu politiku, čuva stabilnost cena i ima isključivo pravo da izdaje novčanice i kovani novac. Ministarstvo finansija vodi fiskalnu politiku."
+    },
+    {
+      "id": 21,
+      "topic": "jezik",
+      "difficulty": 2,
+      "question": "Šta znači latinski izraz „status quo“?",
+      "options": {
+        "a": "napredak",
+        "b": "postojeće stanje",
+        "c": "početno stanje",
+        "d": "velika promena",
+        "e": "pravni status"
+      },
+      "correct": "b",
+      "explanation": "„Status quo“ doslovno znači „stanje u kome (jesmo)“, dakle postojeće stanje stvari. „Očuvati status quo“ znači ne menjati ništa."
+    },
+    {
+      "id": 22,
+      "topic": "jezik",
+      "difficulty": 2,
+      "question": "Šta je eufemizam?",
+      "options": {
+        "a": "Figura preuveličavanja",
+        "b": "Poređenje dve pojave",
+        "c": "Ublažen izraz za nešto neprijatno ili grubo",
+        "d": "Pogrdan izraz",
+        "e": "Izraz suprotnog značenja u istoj rečenici"
+      },
+      "correct": "c",
+      "explanation": "Eufemizam ublažava neprijatan pojam, na primer „preminuo“ umesto „umro“. Preuveličavanje je hiperbola, a ponavljanje glasa aliteracija."
+    },
+    {
+      "id": 23,
+      "topic": "jezik",
+      "difficulty": 3,
+      "question": "Šta znači reč „ambivalentan“?",
+      "options": {
+        "a": "nepokolebljiv",
+        "b": "neodlučan zbog straha",
+        "c": "nepristrasan",
+        "d": "koji istovremeno nosi suprotna osećanja ili stavove",
+        "e": "koji se menja iz dana u dan"
+      },
+      "correct": "d",
+      "explanation": "Ambivalentan je onaj ko prema istoj stvari istovremeno ima suprotstavljena osećanja ili stavove, na primer ljubav i strah."
+    },
+    {
+      "id": 24,
+      "topic": "nauka",
+      "difficulty": 1,
+      "question": "Brzina svetlosti u vakuumu iznosi približno:",
+      "options": {
+        "a": "30.000 km/s",
+        "b": "150.000 km/s",
+        "c": "300.000 km/s",
+        "d": "1.000.000 km/s",
+        "e": "3.000.000 km/s"
+      },
+      "correct": "c",
+      "explanation": "Brzina svetlosti u vakuumu je oko 299.792 km/s, odnosno približno 300.000 km/s."
+    },
+    {
+      "id": 25,
+      "topic": "nauka",
+      "difficulty": 2,
+      "question": "Koji gas čini najveći deo Zemljine atmosfere?",
+      "options": {
+        "a": "Azot",
+        "b": "Kiseonik",
+        "c": "Ugljen-dioksid",
+        "d": "Argon",
+        "e": "Helijum"
+      },
+      "correct": "a",
+      "explanation": "Azot čini oko 78% atmosfere, kiseonik oko 21%, a argon oko 0,9%. Ugljen-dioksida ima samo oko 0,04%."
+    },
+    {
+      "id": 26,
+      "topic": "istorija",
+      "difficulty": 3,
+      "question": "Kojim mirovnim sporazumom je 1648. okončan Tridesetogodišnji rat?",
+      "options": {
+        "a": "Augsburškim mirom",
+        "b": "Utrehtskim mirom",
+        "c": "Bečkim kongresom",
+        "d": "Karlovačkim mirom",
+        "e": "Vestfalskim mirom"
+      },
+      "correct": "e",
+      "explanation": "Vestfalskim mirom (1648) završen je Tridesetogodišnji rat, a često se smatra početkom modernog sistema suverenih država. Augsburški mir (1555) je ranije uredio verske odnose u Svetom rimskom carstvu, a Karlovački mir (1699) okončao je rat Habzburgovaca sa Osmanlijama."
+    },
+    {
+      "id": 27,
+      "topic": "istorija",
+      "difficulty": 2,
+      "question": "U kom veku je donet Dušanov zakonik?",
+      "options": {
+        "a": "u 12. veku",
+        "b": "u 13. veku",
+        "c": "u 14. veku",
+        "d": "u 15. veku",
+        "e": "u 16. veku"
+      },
+      "correct": "c",
+      "explanation": "Dušanov zakonik je donet 1349. na državnom saboru u Skoplju, a dopunjen 1353/1354, za vreme cara Dušana, dakle u 14. veku."
+    },
+    {
+      "id": 28,
+      "topic": "geografija",
+      "difficulty": 2,
+      "question": "Koja reka protiče kroz najviše evropskih država?",
+      "options": {
+        "a": "Rajna",
+        "b": "Dunav",
+        "c": "Volga",
+        "d": "Dnjepar",
+        "e": "Sava"
+      },
+      "correct": "b",
+      "explanation": "Dunav protiče kroz ili čini granicu 10 država (Nemačka, Austrija, Slovačka, Mađarska, Hrvatska, Srbija, Rumunija, Bugarska, Moldavija i Ukrajina), više nego bilo koja druga evropska reka."
+    },
+    {
+      "id": 29,
+      "topic": "knjizevnost",
+      "difficulty": 1,
+      "question": "Ko je autor romana „Na Drini ćuprija“?",
+      "options": {
+        "a": "Ivo Andrić",
+        "b": "Meša Selimović",
+        "c": "Miloš Crnjanski",
+        "d": "Borisav Stanković",
+        "e": "Danilo Kiš"
+      },
+      "correct": "a",
+      "explanation": "Ivo Andrić je napisao „Na Drini ćuprija“ (1945), a 1961. dobio je Nobelovu nagradu za književnost."
+    },
+    {
+      "id": 30,
+      "topic": "umetnost",
+      "difficulty": 3,
+      "question": "Koji umetnički pokret je Andre Breton proglasio svojim manifestom iz 1924. godine?",
+      "options": {
+        "a": "Dadaizam",
+        "b": "Nadrealizam",
+        "c": "Kubizam",
+        "d": "Futurizam",
+        "e": "Ekspresionizam"
+      },
+      "correct": "b",
+      "explanation": "Bretonov „Manifest nadrealizma“ (1924) smatra se početkom nadrealizma, pokreta zasnovanog na „psihičkom automatizmu“ i snovima. Dadaizam mu je prethodio, a mnogi nadrealisti su iz njega izrasli."
+    }
+  ]
+}

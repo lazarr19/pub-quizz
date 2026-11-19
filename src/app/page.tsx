@@ -435,6 +435,12 @@ export default async function LandingPage() {
               >
                 Pub kviz pitanja za kviz veče →
               </Link>
+              <Link
+                href="/test-opste-informisanosti"
+                className="inline-flex items-center justify-center border border-[var(--border)] text-sm font-medium rounded-xl px-5 py-2.5 hover:border-[var(--accent)]/50 transition-colors"
+              >
+                Probni testovi opšte informisanosti →
+              </Link>
             </div>
           </div>
         </RevealSection>
